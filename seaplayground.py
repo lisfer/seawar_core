@@ -1,3 +1,6 @@
+from itertools import chain
+
+
 class Coord:
     def __init__(self, x, y):
         self.x = x
@@ -15,6 +18,10 @@ class Cell(Coord):
 
 
 class ShipCouldNotBePlaced(Exception):
+    pass
+
+
+class OutOfRange(Exception):
     pass
 
 
@@ -85,5 +92,30 @@ class SeaField:
                 print('{0.x:5}: {0.y} == {0.value:2}'.format(cell), end='')
             print()
 
+    def get_suitable_cells(self, ship_length):
+        """
+        :param ship_length:
+        :return: List of tuples [(x, y, <direction>), ..] or empty list
+        """
+        out = []
+        for cell in chain(*self._field):
+            if cell.value == Cell.EMPTY:
+                if self._is_cell_suitable(cell, ship_length, SeaField.HORIZONTAL):
+                    out.append((cell.x, cell.y, SeaField.HORIZONTAL))
+                if self._is_cell_suitable(cell, ship_length, SeaField.VERTICAL):
+                    out.append((cell.x, cell.y, SeaField.HORIZONTAL))
+        return out
 
-
+    def _is_cell_suitable(self, cell, ship_length, direction):
+        coord_x = cell.x
+        coord_y = cell.y
+        if direction == SeaField.HORIZONTAL:
+            for i in range(ship_length):
+                if not (self._correct_coord(coord_x + i, coord_y) and self._field[coord_y][coord_x + i].value == Cell.EMPTY):
+                    return False
+            return True
+        else:
+            for i in range(ship_length):
+                if not (self._correct_coord(coord_x, coord_y + i) and self._field[coord_y + i][coord_x].value == Cell.EMPTY):
+                    return False
+            return True

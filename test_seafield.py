@@ -94,3 +94,20 @@ class SeaFieldTest(unittest.TestCase):
             lambda cell: cell.x == 2 and cell.y in (2, 3, 4): Cell.SHIP
         }
         self._check_cells(ff, conditions)
+
+    def test_get_suitable_cells_none(self):
+        ff = SeaField(5, 5)
+        ff.set_ship(0, 1, 1)
+        ff.set_ship(1, 3, 4)
+        suitable_cells = ff.get_suitable_cells(4)
+        self.assertEqual(len(suitable_cells), 0)
+
+    def test_get_suitable_cells_success(self):
+        ff = SeaField(5, 5)
+        ff.set_ship(0, 1, 1)
+        ff.set_ship(1, 3, 4)
+        ff.pprint()
+        suitable_cells = ff.get_suitable_cells(3)
+        self.assertEqual(len(suitable_cells), 2)
+        for cell in suitable_cells:
+            self.assertTrue(cell in [(2, 0, SeaField.HORIZONTAL), (2, 1, SeaField.HORIZONTAL)])
