@@ -1,7 +1,7 @@
 import unittest
 from itertools import chain
 
-from seaplayground import SeaField, Cell
+from seaplayground import SeaField, Cell, ShipCouldNotBePlaced
 
 
 class SeaFieldTest(unittest.TestCase):
@@ -37,9 +37,12 @@ class SeaFieldTest(unittest.TestCase):
 
     def test_fail_draw_ship(self):
         ff = SeaField(5, 5)
-        self.assertEqual(ff._draw_ship(1, 2, 10, SeaField.HORIZONTAL), False)
-        self.assertEqual(ff._draw_ship(4, 2, 5, SeaField.HORIZONTAL), False)
-        self.assertEqual(ff._draw_ship(14, 2, 5, SeaField.HORIZONTAL), False)
+        with self.assertRaises(ShipCouldNotBePlaced):
+            ff._draw_ship(1, 2, 10, SeaField.HORIZONTAL)
+        with self.assertRaises(ShipCouldNotBePlaced):
+            ff._draw_ship(4, 2, 5, SeaField.HORIZONTAL)
+        with self.assertRaises(ShipCouldNotBePlaced):
+            ff._draw_ship(14, 2, 5, SeaField.HORIZONTAL)
 
     def test_draw_border_one_cell(self):
         ff = SeaField(5, 5)
@@ -72,3 +75,12 @@ class SeaFieldTest(unittest.TestCase):
         }
         self._check_cells(ff, conditions)
 
+    def test_set_ship_horizontal(self):
+        ff = SeaField(5, 5)
+        ff.set_ship(2, 2, 3)
+        conditions = {
+            lambda cell: cell.y in (1, 3) and cell.x in (1, 2, 3, 4): Cell.BORDER,
+            lambda cell: cell.y == 2 and cell.x == 1: Cell.BORDER,
+            lambda cell: cell.y == 2 and cell.x in (2, 3, 4): Cell.SHIP
+        }
+        self._check_cells(ff, conditions)

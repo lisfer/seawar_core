@@ -14,6 +14,10 @@ class Cell(Coord):
         self.value = Cell.EMPTY
 
 
+class ShipCouldNotBePlaced(Exception):
+    pass
+
+
 class SeaField:
 
     HORIZONTAL = 0
@@ -31,11 +35,10 @@ class SeaField:
         else:
             return False
 
-    def _draw_ship(self, coord_x, coord_y, ship_length, direction):
-        try:
-            ship_cells = self._get_cells(coord_x, coord_y, ship_length, direction)
-        except IndexError:
-            return False
+    def _draw_ship(self, coord_x, coord_y, ship_length, direction=None):
+        if direction is None:
+            direction = SeaField.HORIZONTAL
+        ship_cells = self._get_cells(coord_x, coord_y, ship_length, direction)
         for cell in ship_cells:
             cell.value = Cell.SHIP
         return True
@@ -43,10 +46,13 @@ class SeaField:
     def _get_cells(self, coord_x, coord_y, ship_length, direction):
         cells = []
         for i in range(ship_length):
-            if direction == SeaField.HORIZONTAL:
-                cells.append(self._field[coord_y][coord_x + i])
-            else:
-                cells.append(self._field[coord_y + i][coord_x])
+            try:
+                if direction == SeaField.HORIZONTAL:
+                    cells.append(self._field[coord_y][coord_x + i])
+                else:
+                    cells.append(self._field[coord_y + i][coord_x])
+            except IndexError:
+                raise ShipCouldNotBePlaced()
         return cells
 
     def _correct_coord(self, coord_x, coord_y):
@@ -67,6 +73,10 @@ class SeaField:
                 self.mark_cell(coord_x + 1, y, Cell.BORDER)
             self.mark_cell(coord_x, coord_y - 1, Cell.BORDER)
             self.mark_cell(coord_x, coord_y + ship_length, Cell.BORDER)
+
+    def set_ship(self, coord_x, coord_y, ship_length, direction=None):
+        self._draw_ship(coord_x, coord_y, ship_length, direction)
+        self._draw_border(coord_x, coord_y, ship_length, direction)
 
     def pprint(self):
         print()
