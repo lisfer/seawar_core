@@ -106,8 +106,25 @@ class SeaFieldTest(unittest.TestCase):
         ff = SeaField(5, 5)
         ff.set_ship(0, 1, 1)
         ff.set_ship(1, 3, 4)
-        ff.pprint()
         suitable_cells = ff.get_suitable_cells(3)
         self.assertEqual(len(suitable_cells), 2)
         for cell in suitable_cells:
             self.assertTrue(cell in [(2, 0, SeaField.HORIZONTAL), (2, 1, SeaField.HORIZONTAL)])
+
+    def test_get_suitable_cells_vertial_success(self):
+        ff = SeaField(5, 5)
+        ff.set_ship(0, 1, 1)
+        ff.set_ship(1, 3, 4)
+        suitable_cells = ff.get_suitable_cells(2)
+        waited_cells = [
+            (2, 0, SeaField.HORIZONTAL),
+            (3, 0, SeaField.HORIZONTAL),
+            (2, 1, SeaField.HORIZONTAL),
+            (3, 1, SeaField.HORIZONTAL),
+            (2, 0, SeaField.VERTICAL),
+            (3, 0, SeaField.VERTICAL),
+            (4, 0, SeaField.VERTICAL)]
+
+        self.assertEqual(len(suitable_cells), len(waited_cells))
+        for cell in suitable_cells:
+            self.assertTrue(cell in waited_cells)

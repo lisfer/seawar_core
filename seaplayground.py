@@ -103,7 +103,7 @@ class SeaField:
                 if self._is_cell_suitable(cell, ship_length, SeaField.HORIZONTAL):
                     out.append((cell.x, cell.y, SeaField.HORIZONTAL))
                 if self._is_cell_suitable(cell, ship_length, SeaField.VERTICAL):
-                    out.append((cell.x, cell.y, SeaField.HORIZONTAL))
+                    out.append((cell.x, cell.y, SeaField.VERTICAL))
         return out
 
     def _is_cell_suitable(self, cell, ship_length, direction):
