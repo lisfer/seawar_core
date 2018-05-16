@@ -63,3 +63,12 @@ class SeaFieldTest(unittest.TestCase):
         }
         self._check_cells(ff, conditions)
 
+    def test_draw_border_vertical(self):
+        ff = SeaField(5, 5)
+        ff._draw_border(1, 1, 3, SeaField.VERTICAL)
+        conditions = {
+            lambda cell: cell.x in (0, 2) and cell.y in (0, 1, 2, 3, 4): Cell.BORDER,
+            lambda cell: cell.x == 1 and cell.y in (0, 4): Cell.BORDER,
+        }
+        self._check_cells(ff, conditions)
+
