@@ -84,3 +84,13 @@ class SeaFieldTest(unittest.TestCase):
             lambda cell: cell.y == 2 and cell.x in (2, 3, 4): Cell.SHIP
         }
         self._check_cells(ff, conditions)
+
+    def test_set_ship_vertical(self):
+        ff = SeaField(5, 5)
+        ff.set_ship(2, 2, 3, SeaField.VERTICAL)
+        conditions = {
+            lambda cell: cell.x in (1, 3) and cell.y in (1, 2, 3, 4): Cell.BORDER,
+            lambda cell: cell.x == 2 and cell.y == 1: Cell.BORDER,
+            lambda cell: cell.x == 2 and cell.y in (2, 3, 4): Cell.SHIP
+        }
+        self._check_cells(ff, conditions)
