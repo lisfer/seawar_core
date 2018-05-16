@@ -25,7 +25,11 @@ class SeaField:
         self._field = [[Cell(x, y) for x in range(max_x)] for y in range(max_y)]
 
     def mark_cell(self, coord_x, coord_y, value):
-        self._field[coord_x][coord_y].value = value
+        if self._correct_coord(coord_x, coord_y):
+            self._field[coord_y][coord_x].value = value
+            return True
+        else:
+            return False
 
     def _draw_ship(self, coord_x, coord_y, ship_length, direction):
         try:
@@ -45,27 +49,27 @@ class SeaField:
                 cells.append(self._field[coord_y + i][coord_x])
         return cells
 
+    def _correct_coord(self, coord_x, coord_y):
+        return 0 <= coord_y < self.max_y and 0 <= coord_x < self.max_x
+
     def _draw_border(self, coord_x, coord_y, ship_length, direction=None):
         if direction is None:
             direction = SeaField.HORIZONTAL
         if direction == SeaField.HORIZONTAL:
             for x in range(coord_x - 1, coord_x + ship_length + 1):
-                if 0 <= coord_y - 1 < self.max_y and 0 <= x < self.max_x:
-                    self._field[coord_y - 1][x].value = Cell.BORDER
-                if 0 <= coord_y + 1 < self.max_y and 0 <= x < self.max_x:
-                    self._field[coord_y + 1][x].value = Cell.BORDER
-            self._field[coord_y][coord_x - 1].value = Cell.BORDER
-            self._field[coord_y][coord_x + ship_length].value = Cell.BORDER
+                self.mark_cell(x, coord_y - 1, Cell.BORDER)
+                self.mark_cell(x, coord_y + 1, Cell.BORDER)
+            self.mark_cell(coord_x - 1, coord_y, Cell.BORDER)
+            self.mark_cell(coord_x + ship_length, coord_y, Cell.BORDER)
         else:
             for y in range(coord_y - 1, coord_y + ship_length + 1):
-                if 0 <= coord_x - 1 < self.max_x and 0 <= y < self.max_y:
-                    self._field[y][coord_x - 1].value = Cell.BORDER
-                if 0 <= coord_x + 1 < self.max_x and 0 <= y < self.max_y:
-                    self._field[y][coord_x + 1].value = Cell.BORDER
-            self._field[coord_y - 1][coord_x].value = Cell.BORDER
-            self._field[coord_y + ship_length][coord_x].value = Cell.BORDER
+                self.mark_cell(coord_x - 1, y, Cell.BORDER)
+                self.mark_cell(coord_x + 1, y, Cell.BORDER)
+            self.mark_cell(coord_x, coord_y - 1, Cell.BORDER)
+            self.mark_cell(coord_x, coord_y + ship_length, Cell.BORDER)
 
     def pprint(self):
+        print()
         for row in self._field:
             for cell in row:
                 print('{0.x:5}: {0.y} == {0.value:2}'.format(cell), end='')
