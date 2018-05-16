@@ -29,7 +29,7 @@ class SeaField:
     def _draw_ship(self, coord_x, coord_y, ship_length, direction):
         try:
             ship_cells = self._get_cells(coord_x, coord_y, ship_length, direction)
-        except KeyError:
+        except IndexError:
             return False
         for cell in ship_cells:
             cell.value = Cell.SHIP
