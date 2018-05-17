@@ -43,43 +43,33 @@ class SeaField:
             return False
 
     def _draw_ship(self, coord_x, coord_y, ship_length, direction=None):
-        if direction is None:
-            direction = SeaField.HORIZONTAL
-        ship_cells = self._get_cells(coord_x, coord_y, ship_length, direction)
-        for cell in ship_cells:
+        for cell in self._generate_cells(coord_x, coord_y, ship_length, direction):
             cell.value = Cell.SHIP
         return True
-
-    def _get_cells(self, coord_x, coord_y, ship_length, direction):
-        cells = []
-        for i in range(ship_length):
-            try:
-                if direction == SeaField.HORIZONTAL:
-                    cells.append(self._field[coord_y][coord_x + i])
-                else:
-                    cells.append(self._field[coord_y + i][coord_x])
-            except IndexError:
-                raise ShipCouldNotBePlaced()
-        return cells
 
     def _correct_coord(self, coord_x, coord_y):
         return 0 <= coord_y < self.max_y and 0 <= coord_x < self.max_x
 
-    def _draw_border(self, coord_x, coord_y, ship_length, direction=None):
-        if direction is None:
-            direction = SeaField.HORIZONTAL
-        if direction == SeaField.HORIZONTAL:
-            for x in range(coord_x - 1, coord_x + ship_length + 1):
-                self.mark_cell(x, coord_y - 1, Cell.BORDER)
-                self.mark_cell(x, coord_y + 1, Cell.BORDER)
-            self.mark_cell(coord_x - 1, coord_y, Cell.BORDER)
-            self.mark_cell(coord_x + ship_length, coord_y, Cell.BORDER)
+    def _get_border_corners(self, coord_x, coord_y, ship_length, direction):
+
+        if direction == SeaField.VERTICAL:
+            return [(coord_x - 1, coord_y - 1, ship_length + 2, direction),
+                    (coord_x + 1, coord_y - 1, ship_length + 2, direction),
+                    (coord_x, coord_y - 1, 1, None),
+                    (coord_x, coord_y + ship_length, 1, None)]
         else:
-            for y in range(coord_y - 1, coord_y + ship_length + 1):
-                self.mark_cell(coord_x - 1, y, Cell.BORDER)
-                self.mark_cell(coord_x + 1, y, Cell.BORDER)
-            self.mark_cell(coord_x, coord_y - 1, Cell.BORDER)
-            self.mark_cell(coord_x, coord_y + ship_length, Cell.BORDER)
+            return [(coord_x - 1, coord_y - 1, ship_length + 2, direction),
+                    (coord_x - 1, coord_y + 1, ship_length + 2, direction),
+                    (coord_x - 1, coord_y, 1, None),
+                    (coord_x + ship_length, coord_y, 1, None)]
+
+    def _draw_border(self, coord_x, coord_y, ship_length, direction=None):
+        cell_generators = [
+            self._generate_cells(*row, strict=False)
+            for row in self._get_border_corners(coord_x, coord_y, ship_length, direction)]
+
+        for cell in chain(*cell_generators):
+            cell.value = Cell.BORDER
 
     def set_ship(self, coord_x, coord_y, ship_length, direction=None):
         self._draw_ship(coord_x, coord_y, ship_length, direction)
@@ -107,15 +97,25 @@ class SeaField:
         return out
 
     def _is_cell_suitable(self, cell, ship_length, direction):
-        coord_x = cell.x
-        coord_y = cell.y
-        if direction == SeaField.HORIZONTAL:
-            for i in range(ship_length):
-                if not (self._correct_coord(coord_x + i, coord_y) and self._field[coord_y][coord_x + i].value == Cell.EMPTY):
+        try:
+            for cell in self._generate_cells(cell.x, cell.y, ship_length, direction):
+                if cell.value != Cell.EMPTY:
                     return False
-            return True
-        else:
-            for i in range(ship_length):
-                if not (self._correct_coord(coord_x, coord_y + i) and self._field[coord_y + i][coord_x].value == Cell.EMPTY):
-                    return False
-            return True
+        except ShipCouldNotBePlaced:
+            return False
+        return True
+
+    def _generate_next_coord(self, coord_x, coord_y, direction):
+        if direction == SeaField.VERTICAL:
+            return coord_x, coord_y + 1
+        return coord_x + 1, coord_y
+
+    def _generate_cells(self, coord_x, coord_y, ship_length, direction, strict=True):
+        nx, ny = coord_x, coord_y
+        for i in range(ship_length):
+            if not self._correct_coord(nx, ny):
+                if strict:
+                    raise ShipCouldNotBePlaced()
+            else:
+                yield self._field[ny][nx]
+            nx, ny = self._generate_next_coord(nx, ny, direction)

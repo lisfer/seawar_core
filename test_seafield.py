@@ -128,3 +128,4 @@ class SeaFieldTest(unittest.TestCase):
         self.assertEqual(len(suitable_cells), len(waited_cells))
         for cell in suitable_cells:
             self.assertTrue(cell in waited_cells)
+
