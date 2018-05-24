@@ -32,6 +32,18 @@ class SeaFieldTest(unittest.TestCase):
             else:
                 assert cell.value == Cell.EMPTY
 
+    def test_set_border_edge(self):
+        base = SeaPlayground(4, 4)
+        base.set_border(0, 0, 2, True)
+        base.set_border(2, 3, 2)
+        border = [(1, 0), (1, 1), (0, 2), (1, 2),
+                  (2, 2), (3, 2), (1, 3)]
+        for cell in base.cells:
+            if (cell.x, cell.y) in border:
+                assert cell.value == Cell.BORDER
+            else:
+                assert cell.value == Cell.EMPTY
+
     def test_put_ship(self):
         base = SeaPlayground(5, 5)
         base.put_ship(2, 1, 3, True)
@@ -50,18 +62,18 @@ class SeaFieldTest(unittest.TestCase):
 
     def test_suitable_cell(self):
         base = SeaPlayground(5, 5)
-        assert base.is_cell_suitable(1, 1, 1)
-        assert base.is_cell_suitable(1, 1, 3)
-        assert base.is_cell_suitable(1, 1, 3, True)
+        assert base.is_cell_correct(1, 1, 1)
+        assert base.is_cell_correct(1, 1, 3)
+        assert base.is_cell_correct(1, 1, 3, True)
 
-        assert not base.is_cell_suitable(-1, 1, 1)
-        assert not base.is_cell_suitable(5, 1, 1)
-        assert not base.is_cell_suitable(1, 1, 11)
+        assert not base.is_cell_correct(-1, 1, 1)
+        assert not base.is_cell_correct(5, 1, 1)
+        assert not base.is_cell_correct(1, 1, 11)
 
         base.put_ship(1, 1, 3)
 
-        assert not base.is_cell_suitable(0, 0, 1)
-        assert not base.is_cell_suitable(0, 2, 2, True)
+        assert not base.is_cell_correct(0, 0, 1)
+        assert not base.is_cell_correct(0, 2, 2, True)
 
     def test_incorrect_placement(self):
         base = SeaPlayground(5, 5)

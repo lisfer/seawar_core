@@ -38,7 +38,7 @@ class Field:
         return out + '\n'
 
     @staticmethod
-    def _next_cell(coord_x, coord_y, step, is_vertical=False):
+    def next_cell(coord_x, coord_y, step, is_vertical=False):
         return coord_x + step * (not is_vertical), coord_y + step * is_vertical
 
     def set(self, coord_x, coord_y, value):
@@ -64,28 +64,28 @@ class SeaPlayground:
         return self._field._cells
 
     def set_ship(self, coord_x, coord_y, length, is_vertical=False):
-        next_cell = partial(Field._next_cell, coord_x, coord_y, is_vertical=is_vertical)
+        next_cell = partial(Field.next_cell, coord_x, coord_y, is_vertical=is_vertical)
         [self._field.set(value=Cell.SHIP, *next_cell(i)) for i in range(length)]
 
     def set_border(self, coord_x, coord_y, length, is_vertical=False):
         v_length, h_length = (length, 1) if is_vertical else (1, length)
         cells = []
         for i in range(v_length + 2):
-            cells.append(Field._next_cell(coord_x - 1, coord_y - 1, i, True))
-            cells.append(Field._next_cell(coord_x + h_length, coord_y - 1, i, True))
+            cells.append(Field.next_cell(coord_x - 1, coord_y - 1, i, True))
+            cells.append(Field.next_cell(coord_x + h_length, coord_y - 1, i, True))
         for i in range(h_length):
-            cells.append(Field._next_cell(coord_x, coord_y - 1, i, False))
-            cells.append(Field._next_cell(coord_x, coord_y + v_length, i, False))
-        [self._field.set(value=Cell.BORDER, *cell) for cell in cells]
+            cells.append(Field.next_cell(coord_x, coord_y - 1, i, False))
+            cells.append(Field.next_cell(coord_x, coord_y + v_length, i, False))
+        [self._field.set(value=Cell.BORDER, *cell) for cell in cells if self._field.is_cell_correct(*cell)]
 
     def put_ship(self, coord_x, coord_y, length, is_vertical=False):
-        if self.is_cell_suitable(coord_x, coord_y, length, is_vertical):
+        if self.is_cell_correct(coord_x, coord_y, length, is_vertical):
             self.set_ship(coord_x, coord_y, length, is_vertical)
             self.set_border(coord_x, coord_y, length, is_vertical)
         else:
             raise CouldNotPlaceShip()
 
-    def is_cell_suitable(self, coord_x, coord_y, length, is_vertical=False):
-        next_cell = partial(Field._next_cell, coord_x, coord_y, is_vertical=is_vertical)
+    def is_cell_correct(self, coord_x, coord_y, length, is_vertical=False):
+        next_cell = partial(Field.next_cell, coord_x, coord_y, is_vertical=is_vertical)
         check = lambda x, y: self._field.is_cell_correct(x, y) and self._field.get(x, y) is Cell.EMPTY
         return all([check(*next_cell(i)) for i in range(length)])
