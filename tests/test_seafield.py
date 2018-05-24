@@ -92,7 +92,12 @@ class SeaFieldTest(unittest.TestCase):
 
     def test_put_random_ship(self):
         base = SeaField(4, 4)
-        SeaPlayground.put_ship_random(base, 3)
+        SeaPlayground._put_ship_random(base, 3)
         with self.assertRaises(NoSpaceLeft):
-            SeaPlayground.put_ship_random(base, 3)
-            SeaPlayground.put_ship_random(base, 3)
+            SeaPlayground._put_ship_random(base, 3)
+            SeaPlayground._put_ship_random(base, 3)
+
+    def test_put_random_many(self):
+        base = SeaField()
+        SeaPlayground.put_ships_random(base)
+        assert len([cell for cell in base.cells if cell.value == Cell.SHIP]) == 20

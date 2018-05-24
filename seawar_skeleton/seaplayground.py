@@ -3,6 +3,9 @@ from itertools import chain, product
 from random import choice
 
 
+STANDARD_SHIP_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+
+
 class IncorrectShipPosition(Exception):
     pass
 
@@ -96,10 +99,16 @@ class SeaPlayground:
                 if SeaPlayground.is_cell_suitable(field, cell.x, cell.y, length, is_vertical)]
 
     @staticmethod
-    def put_ship_random(field, length):
+    def _put_ship_random(field, length):
         cells = SeaPlayground.get_suitable_cells(field, length)
         if not cells:
             raise NoSpaceLeft()
         coord_x, coord_y, is_vertical = choice(cells)
         SeaPlayground._set_ship(field, coord_x, coord_y, length, is_vertical)
         SeaPlayground._set_border(field, coord_x, coord_y, length, is_vertical)
+
+    @staticmethod
+    def put_ships_random(field, fleet:list=None):
+        fleet = fleet if fleet else STANDARD_SHIP_FLEET
+        for length in fleet:
+            SeaPlayground._put_ship_random(field, length)
