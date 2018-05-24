@@ -1,9 +1,10 @@
 import unittest
 
-from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField
+from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField, \
+    IncorrectCoordinate
 
 
-class SeaFieldTest(unittest.TestCase):
+class SeaPlaygroundTest(unittest.TestCase):
 
     def test_create(self):
         base = SeaField()
@@ -101,3 +102,19 @@ class SeaFieldTest(unittest.TestCase):
         base = SeaField()
         SeaPlayground.put_ships_random(base)
         assert len([cell for cell in base.cells if cell.value == Cell.SHIP]) == 20
+
+    def test_income_shoot(self):
+        base = SeaField()
+        SeaPlayground.put_ship(base, 2, 2, 3)
+        assert SeaPlayground.income_shoot(base, 3, 0) is False
+        assert SeaPlayground.income_shoot(base, 3, 1) is False
+        assert SeaPlayground.income_shoot(base, 3, 2) is True
+        assert SeaPlayground.income_shoot(base, 3, 3) is False
+        assert SeaPlayground.income_shoot(base, 3, 4) is False
+
+    def test_incorrect_income_shoot(self):
+        base = SeaField()
+        with self.assertRaises(IncorrectCoordinate):
+            SeaPlayground.income_shoot(base, -3, 0)
+        with self.assertRaises(IncorrectCoordinate):
+            SeaPlayground.income_shoot(base, 11, 0)

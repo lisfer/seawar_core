@@ -6,7 +6,11 @@ from random import choice
 STANDARD_SHIP_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 
-class IncorrectShipPosition(Exception):
+class IncorrectCoordinate(Exception):
+    pass
+
+
+class IncorrectShipPosition(IncorrectCoordinate):
     pass
 
 
@@ -19,6 +23,8 @@ class Cell:
     EMPTY = 0
     BORDER = 1
     SHIP = 10
+    HIT = -10
+    MISSED = -1
 
     def __init__(self, x, y):
         self.x = x
@@ -33,12 +39,12 @@ class SeaField:
 
     def __init__(self, max_x=10, max_y=10):
         self.max_x = max_x
-        self.may_y = max_y
+        self.max_y = max_y
         self._field = [[Cell(i, j) for i in range(max_x)] for j in range(max_y)]
         self.cells = list(chain(*self._field))
 
     def __str__(self):
-        out = 'Field (max_x={}; max_y={})'.format(self.max_x, self.may_y)
+        out = 'Field (max_x={}; max_y={})'.format(self.max_x, self.max_y)
         for row in self._field:
             out += '\n\t'
             for cell in row:
@@ -56,7 +62,7 @@ class SeaField:
         return self._field[coord_y][coord_x].value
 
     def is_coord_correct(self, coord_x, coord_y):
-        return (0 <= coord_x < self.max_x) and (0 <= coord_y < self.may_y)
+        return (0 <= coord_x < self.max_x) and (0 <= coord_y < self.max_y)
 
 
 class SeaPlayground:
@@ -112,3 +118,11 @@ class SeaPlayground:
         fleet = fleet if fleet else STANDARD_SHIP_FLEET
         for length in fleet:
             SeaPlayground._put_ship_random(field, length)
+
+    @staticmethod
+    def income_shoot(field, coord_x, coord_y):
+        if field.is_coord_correct(coord_x, coord_y):
+            result = Cell.HIT if field.get(coord_x, coord_y) == Cell.SHIP else Cell.MISSED
+            field.set(coord_x, coord_y, result)
+            return result == Cell.HIT
+        raise IncorrectCoordinate(f'({coord_x}: {coord_y}) for Field({field.max_x}:{field.max_y})')
