@@ -5,6 +5,10 @@ from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosi
 
 class SeaFieldTest(unittest.TestCase):
 
+    def test_create(self):
+        base = SeaPlayground()
+        assert len(base.cells) == 100
+
     def test_set_ship(self):
         base = SeaPlayground(5, 5)
         base.set_ship(1, 1, 3)

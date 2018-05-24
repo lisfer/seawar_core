@@ -58,7 +58,7 @@ class Field:
 
 class SeaPlayground:
 
-    def __init__(self, max_x, max_y):
+    def __init__(self, max_x=10, max_y=10):
         self._field = Field(max_x, max_y)
 
     def __str__(self):
