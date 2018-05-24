@@ -1,1 +1,1 @@
-from .seaplayground import Cell, Field, SeaPlayground, IncorrectShipPosition, NoSpaceLeft
+from .seaplayground import Cell, SeaField, SeaPlayground, IncorrectShipPosition, NoSpaceLeft
