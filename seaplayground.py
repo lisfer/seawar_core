@@ -5,6 +5,7 @@ from itertools import chain
 class Cell:
 
     EMPTY = 0
+    BORDER = 1
     SHIP = 10
 
     def __init__(self, x, y):
@@ -55,3 +56,14 @@ class SeaPlayground:
     def set_ship(self, coord_x, coord_y, length, is_vertical=False):
         next_cell = partial(SeaPlayground._next_cell, coord_x, coord_y, is_vertical=is_vertical)
         [self._field.set(value=Cell.SHIP, *next_cell(i)) for i in range(length)]
+
+    def set_border(self, coord_x, coord_y, length, is_vertical=False):
+        v_length, h_length = (length, 1) if is_vertical else (1, length)
+        cells = []
+        for i in range(v_length + 2):
+            cells.append(SeaPlayground._next_cell(coord_x - 1, coord_y - 1, i, True))
+            cells.append(SeaPlayground._next_cell(coord_x + h_length, coord_y - 1, i, True))
+        for i in range(h_length):
+            cells.append(SeaPlayground._next_cell(coord_x, coord_y - 1, i, False))
+            cells.append(SeaPlayground._next_cell(coord_x, coord_y + v_length, i, False))
+        [self._field.set(value=Cell.BORDER, *cell) for cell in cells]
