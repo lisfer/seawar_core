@@ -126,3 +126,7 @@ class SeaPlayground:
             field.set(coord_x, coord_y, result)
             return result == Cell.HIT
         raise IncorrectCoordinate(f'({coord_x}: {coord_y}) for Field({field.max_x}:{field.max_y})')
+
+    @staticmethod
+    def find_target(field):
+        return choice([(cell.x, cell.y) for cell in field.cells if cell.value is Cell.EMPTY])

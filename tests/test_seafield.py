@@ -118,3 +118,8 @@ class SeaPlaygroundTest(unittest.TestCase):
             SeaPlayground.income_shoot(base, -3, 0)
         with self.assertRaises(IncorrectCoordinate):
             SeaPlayground.income_shoot(base, 11, 0)
+
+    def test_find_target(self):
+        base = SeaField(2, 2)
+        map(base.set, (0, 0, 1), (0, 1, 0), (1, 1, 1))
+        assert SeaPlayground.find_target(base) == (1, 1)
