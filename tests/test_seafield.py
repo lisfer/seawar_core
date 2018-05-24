@@ -1,6 +1,6 @@
 import unittest
 
-from seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft
+from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft
 
 
 class SeaFieldTest(unittest.TestCase):
