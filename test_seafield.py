@@ -1,5 +1,5 @@
 import unittest
-from seaplayground import SeaPlayground, Cell
+from seaplayground import SeaPlayground, Cell, CouldNotPlaceShip
 
 
 class SeaFieldTest(unittest.TestCase):
@@ -62,3 +62,9 @@ class SeaFieldTest(unittest.TestCase):
 
         assert not base.is_cell_suitable(0, 0, 1)
         assert not base.is_cell_suitable(0, 2, 2, True)
+
+    def test_incorrect_placement(self):
+        base = SeaPlayground(5, 5)
+        base.put_ship(1, 1, 3)
+        with self.assertRaises(CouldNotPlaceShip):
+            base.put_ship(0, 2, 2, True)

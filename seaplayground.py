@@ -2,6 +2,10 @@ from functools import partial
 from itertools import chain
 
 
+class CouldNotPlaceShip(Exception):
+    pass
+
+
 class Cell:
 
     EMPTY = 0
@@ -75,8 +79,11 @@ class SeaPlayground:
         [self._field.set(value=Cell.BORDER, *cell) for cell in cells]
 
     def put_ship(self, coord_x, coord_y, length, is_vertical=False):
-        self.set_ship(coord_x, coord_y, length, is_vertical)
-        self.set_border(coord_x, coord_y, length, is_vertical)
+        if self.is_cell_suitable(coord_x, coord_y, length, is_vertical):
+            self.set_ship(coord_x, coord_y, length, is_vertical)
+            self.set_border(coord_x, coord_y, length, is_vertical)
+        else:
+            raise CouldNotPlaceShip()
 
     def is_cell_suitable(self, coord_x, coord_y, length, is_vertical=False):
         next_cell = partial(Field._next_cell, coord_x, coord_y, is_vertical=is_vertical)
