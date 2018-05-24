@@ -31,7 +31,7 @@ class Cell:
         self.y = y
         self.value = Cell.EMPTY
 
-    def __str__(self):
+    def __repr__(self):
         return f'<Cell: ({self.x}; {self.y} = {self.value})>'
 
 
@@ -43,7 +43,7 @@ class SeaField:
         self._field = [[Cell(i, j) for i in range(max_x)] for j in range(max_y)]
         self.cells = list(chain(*self._field))
 
-    def __str__(self):
+    def __repr__(self):
         out = 'Field (max_x={}; max_y={})'.format(self.max_x, self.max_y)
         for row in self._field:
             out += '\n\t'
@@ -63,6 +63,14 @@ class SeaField:
 
     def is_coord_correct(self, coord_x, coord_y):
         return (0 <= coord_x < self.max_x) and (0 <= coord_y < self.max_y)
+
+
+def check_coordinate(f):
+    def decor(field, coord_x, coord_y, *args, **kwargs):
+        if field.is_coord_correct(coord_x, coord_y):
+            return f(field, coord_x, coord_y, *args, **kwargs)
+        raise IncorrectCoordinate(f'({coord_x}: {coord_y}) for Field({field.max_x}:{field.max_y})')
+    return decor
 
 
 class SeaPlayground:
@@ -85,6 +93,7 @@ class SeaPlayground:
         [field.set(value=Cell.BORDER, *cell) for cell in cells if field.is_coord_correct(*cell)]
 
     @staticmethod
+    @check_coordinate
     def put_ship(field, coord_x, coord_y, length, is_vertical=False):
         if SeaPlayground.is_cell_suitable(field, coord_x, coord_y, length, is_vertical):
             SeaPlayground._set_ship(field, coord_x, coord_y, length, is_vertical)
@@ -120,13 +129,18 @@ class SeaPlayground:
             SeaPlayground._put_ship_random(field, length)
 
     @staticmethod
+    @check_coordinate
     def income_shoot(field, coord_x, coord_y):
-        if field.is_coord_correct(coord_x, coord_y):
-            result = Cell.HIT if field.get(coord_x, coord_y) == Cell.SHIP else Cell.MISSED
-            field.set(coord_x, coord_y, result)
-            return result == Cell.HIT
-        raise IncorrectCoordinate(f'({coord_x}: {coord_y}) for Field({field.max_x}:{field.max_y})')
+        result = Cell.HIT if field.get(coord_x, coord_y) == Cell.SHIP else Cell.MISSED
+        field.set(coord_x, coord_y, result)
+        return result == Cell.HIT
 
     @staticmethod
     def find_target(field):
         return choice([(cell.x, cell.y) for cell in field.cells if cell.value is Cell.EMPTY])
+
+    @staticmethod
+    @check_coordinate
+    def target_answer(field, coord_x, coord_y, hit=False):
+        answer = Cell.HIT if hit else Cell.MISSED
+        field.set(coord_x, coord_y, answer)

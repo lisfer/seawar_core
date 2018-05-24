@@ -78,6 +78,8 @@ class SeaPlaygroundTest(unittest.TestCase):
     def test_incorrect_placement(self):
         base = SeaField(5, 5)
         SeaPlayground.put_ship(base, 1, 1, 3)
+        with self.assertRaises(IncorrectCoordinate):
+            SeaPlayground.put_ship(base, -1, 2, 2, True)
         with self.assertRaises(IncorrectShipPosition):
             SeaPlayground.put_ship(base, 0, 2, 2, True)
 
@@ -121,5 +123,18 @@ class SeaPlaygroundTest(unittest.TestCase):
 
     def test_find_target(self):
         base = SeaField(2, 2)
-        map(base.set, (0, 0, 1), (0, 1, 0), (1, 1, 1))
+        list(map(base.set, (0, 0, 1), (0, 1, 0), (1, 1, 1)))
         assert SeaPlayground.find_target(base) == (1, 1)
+
+    def test_target_anwer(self):
+        base = SeaField(5, 5)
+        SeaPlayground.target_answer(base, 1, 1, False)
+        SeaPlayground.target_answer(base, 2, 2, True)
+        SeaPlayground.target_answer(base, 3, 3, False)
+        for cell in base.cells:
+            if (cell.x, cell.y) in ((1, 1), (3, 3)):
+                assert cell.value == Cell.MISSED
+            elif cell.x == 2 and cell.y == 2:
+                assert cell.value == Cell.HIT
+            else:
+                assert cell.value == Cell.EMPTY
