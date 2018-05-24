@@ -80,3 +80,10 @@ class SeaFieldTest(unittest.TestCase):
         base.put_ship(1, 1, 3)
         with self.assertRaises(CouldNotPlaceShip):
             base.put_ship(0, 2, 2, True)
+
+    def test_get_suitable_cells(self):
+        base = SeaPlayground(3, 3)
+        base.put_ship(0, 0, 1)
+        assert base.get_suitable_cells(3) == [(2, 0), (0, 2)]
+        assert base.get_suitable_cells(2) == [(2, 0), (2, 1), (0, 2), (1, 2)]
+        assert base.get_suitable_cells(1) == [(2, 0), (2, 1), (0, 2), (1, 2), (2, 2)]

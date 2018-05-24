@@ -89,3 +89,9 @@ class SeaPlayground:
         next_cell = partial(Field.next_cell, coord_x, coord_y, is_vertical=is_vertical)
         check = lambda x, y: self._field.is_cell_correct(x, y) and self._field.get(x, y) is Cell.EMPTY
         return all([check(*next_cell(i)) for i in range(length)])
+
+    def is_cell_suitable(self, coord_x, coord_y, length):
+        return self.is_cell_correct(coord_x, coord_y, length) or self.is_cell_correct(coord_x, coord_y, length, True)
+
+    def get_suitable_cells(self, length):
+        return [(cell.x, cell.y) for cell in self.cells if self.is_cell_suitable(cell.x, cell.y, length)]
