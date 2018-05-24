@@ -1,14 +1,9 @@
 import unittest
-from seaplayground import SeaPlayground, Cell, CouldNotPlaceShip
+
+from seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft
 
 
 class SeaFieldTest(unittest.TestCase):
-
-    # add ship to coordinates
-    # add border for ship
-    # find out suitable place for ship
-    # generate ships on the map
-    # shoot
 
     def test_set_ship(self):
         base = SeaPlayground(5, 5)
@@ -78,12 +73,22 @@ class SeaFieldTest(unittest.TestCase):
     def test_incorrect_placement(self):
         base = SeaPlayground(5, 5)
         base.put_ship(1, 1, 3)
-        with self.assertRaises(CouldNotPlaceShip):
+        with self.assertRaises(IncorrectShipPosition):
             base.put_ship(0, 2, 2, True)
 
     def test_get_suitable_cells(self):
         base = SeaPlayground(3, 3)
         base.put_ship(0, 0, 1)
-        assert base.get_suitable_cells(3) == [(2, 0), (0, 2)]
-        assert base.get_suitable_cells(2) == [(2, 0), (2, 1), (0, 2), (1, 2)]
-        assert base.get_suitable_cells(1) == [(2, 0), (2, 1), (0, 2), (1, 2), (2, 2)]
+        assert base.get_suitable_cells(3) == [(2, 0, True), (0, 2, False)]
+        assert base.get_suitable_cells(2) == [(2, 0, True), (2, 1, True), (0, 2, False), (1, 2, False)]
+
+        assert base.get_suitable_cells(1) == [(2, 0, True), (2, 0, False), (2, 1, True), (2, 1, False),
+                                              (0, 2, True), (0, 2, False), (1, 2, True), (1, 2, False),
+                                              (2, 2, True), (2, 2, False)]
+
+    def test_put_random_ship(self):
+        base = SeaPlayground(4, 4)
+        base.put_ship_random(3)
+        with self.assertRaises(NoSpaceLeft):
+            base.put_ship_random(3)
+            base.put_ship_random(3)

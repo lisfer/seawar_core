@@ -1,8 +1,13 @@
 from functools import partial
-from itertools import chain
+from itertools import chain, product
+from random import choice
 
 
-class CouldNotPlaceShip(Exception):
+class IncorrectShipPosition(Exception):
+    pass
+
+
+class NoSpaceLeft(Exception):
     pass
 
 
@@ -47,7 +52,7 @@ class Field:
     def get(self, coord_x, coord_y):
         return self._field[coord_y][coord_x].value
 
-    def is_cell_correct(self, coord_x, coord_y):
+    def is_coord_correct(self, coord_x, coord_y):
         return (0 <= coord_x < self.max_x) and (0 <= coord_y < self.may_y)
 
 
@@ -76,22 +81,29 @@ class SeaPlayground:
         for i in range(h_length):
             cells.append(Field.next_cell(coord_x, coord_y - 1, i, False))
             cells.append(Field.next_cell(coord_x, coord_y + v_length, i, False))
-        [self._field.set(value=Cell.BORDER, *cell) for cell in cells if self._field.is_cell_correct(*cell)]
+        [self._field.set(value=Cell.BORDER, *cell) for cell in cells if self._field.is_coord_correct(*cell)]
 
     def put_ship(self, coord_x, coord_y, length, is_vertical=False):
         if self.is_cell_correct(coord_x, coord_y, length, is_vertical):
             self.set_ship(coord_x, coord_y, length, is_vertical)
             self.set_border(coord_x, coord_y, length, is_vertical)
         else:
-            raise CouldNotPlaceShip()
+            raise IncorrectShipPosition()
 
     def is_cell_correct(self, coord_x, coord_y, length, is_vertical=False):
         next_cell = partial(Field.next_cell, coord_x, coord_y, is_vertical=is_vertical)
-        check = lambda x, y: self._field.is_cell_correct(x, y) and self._field.get(x, y) is Cell.EMPTY
+        check = lambda x, y: self._field.is_coord_correct(x, y) and self._field.get(x, y) is Cell.EMPTY
         return all([check(*next_cell(i)) for i in range(length)])
 
-    def is_cell_suitable(self, coord_x, coord_y, length):
-        return self.is_cell_correct(coord_x, coord_y, length) or self.is_cell_correct(coord_x, coord_y, length, True)
-
     def get_suitable_cells(self, length):
-        return [(cell.x, cell.y) for cell in self.cells if self.is_cell_suitable(cell.x, cell.y, length)]
+        return [(cell.x, cell.y, is_vertical)
+                for cell, is_vertical in product(self.cells, (True, False))
+                if self.is_cell_correct(cell.x, cell.y, length, is_vertical)]
+
+    def put_ship_random(self, length):
+        cells = self.get_suitable_cells(length)
+        if not cells:
+            raise NoSpaceLeft()
+        coord_x, coord_y, is_vertical = choice(self.get_suitable_cells(length))
+        self.set_ship(coord_x, coord_y, length, is_vertical)
+        self.set_border(coord_x, coord_y, length, is_vertical)
