@@ -3,7 +3,14 @@ from itertools import chain, product
 from random import choice
 
 
-class IncorrectShipPosition(Exception):
+STANDARD_SHIP_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+
+
+class IncorrectCoordinate(Exception):
+    pass
+
+
+class IncorrectShipPosition(IncorrectCoordinate):
     pass
 
 
@@ -16,26 +23,28 @@ class Cell:
     EMPTY = 0
     BORDER = 1
     SHIP = 10
+    HIT = -10
+    MISSED = -1
 
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.value = Cell.EMPTY
 
-    def __str__(self):
+    def __repr__(self):
         return f'<Cell: ({self.x}; {self.y} = {self.value})>'
 
 
-class Field:
+class SeaField:
 
-    def __init__(self, max_x, max_y):
+    def __init__(self, max_x=10, max_y=10):
         self.max_x = max_x
-        self.may_y = max_y
+        self.max_y = max_y
         self._field = [[Cell(i, j) for i in range(max_x)] for j in range(max_y)]
-        self._cells = list(chain(*self._field))
+        self.cells = list(chain(*self._field))
 
-    def __str__(self):
-        out = 'Field (max_x={}; max_y={})'.format(self.max_x, self.may_y)
+    def __repr__(self):
+        out = 'Field (max_x={}; max_y={})'.format(self.max_x, self.max_y)
         for row in self._field:
             out += '\n\t'
             for cell in row:
@@ -53,57 +62,85 @@ class Field:
         return self._field[coord_y][coord_x].value
 
     def is_coord_correct(self, coord_x, coord_y):
-        return (0 <= coord_x < self.max_x) and (0 <= coord_y < self.may_y)
+        return (0 <= coord_x < self.max_x) and (0 <= coord_y < self.max_y)
+
+
+def check_coordinate(f):
+    def decor(field, coord_x, coord_y, *args, **kwargs):
+        if field.is_coord_correct(coord_x, coord_y):
+            return f(field, coord_x, coord_y, *args, **kwargs)
+        raise IncorrectCoordinate(f'({coord_x}: {coord_y}) for Field({field.max_x}:{field.max_y})')
+    return decor
 
 
 class SeaPlayground:
 
-    def __init__(self, max_x, max_y):
-        self._field = Field(max_x, max_y)
+    @staticmethod
+    def _set_ship(field, coord_x, coord_y, length, is_vertical=False):
+        next_cell = partial(SeaField.next_cell, coord_x, coord_y, is_vertical=is_vertical)
+        [field.set(value=Cell.SHIP, *next_cell(i)) for i in range(length)]
 
-    def __str__(self):
-        return '<SeaPlayground>:\n' + str(self._field)
-
-    @property
-    def cells(self):
-        return self._field._cells
-
-    def set_ship(self, coord_x, coord_y, length, is_vertical=False):
-        next_cell = partial(Field.next_cell, coord_x, coord_y, is_vertical=is_vertical)
-        [self._field.set(value=Cell.SHIP, *next_cell(i)) for i in range(length)]
-
-    def set_border(self, coord_x, coord_y, length, is_vertical=False):
+    @staticmethod
+    def _set_border(field, coord_x, coord_y, length, is_vertical=False):
         v_length, h_length = (length, 1) if is_vertical else (1, length)
         cells = []
         for i in range(v_length + 2):
-            cells.append(Field.next_cell(coord_x - 1, coord_y - 1, i, True))
-            cells.append(Field.next_cell(coord_x + h_length, coord_y - 1, i, True))
+            cells.append(SeaField.next_cell(coord_x - 1, coord_y - 1, i, True))
+            cells.append(SeaField.next_cell(coord_x + h_length, coord_y - 1, i, True))
         for i in range(h_length):
-            cells.append(Field.next_cell(coord_x, coord_y - 1, i, False))
-            cells.append(Field.next_cell(coord_x, coord_y + v_length, i, False))
-        [self._field.set(value=Cell.BORDER, *cell) for cell in cells if self._field.is_coord_correct(*cell)]
+            cells.append(SeaField.next_cell(coord_x, coord_y - 1, i, False))
+            cells.append(SeaField.next_cell(coord_x, coord_y + v_length, i, False))
+        [field.set(value=Cell.BORDER, *cell) for cell in cells if field.is_coord_correct(*cell)]
 
-    def put_ship(self, coord_x, coord_y, length, is_vertical=False):
-        if self.is_cell_correct(coord_x, coord_y, length, is_vertical):
-            self.set_ship(coord_x, coord_y, length, is_vertical)
-            self.set_border(coord_x, coord_y, length, is_vertical)
+    @staticmethod
+    @check_coordinate
+    def put_ship(field, coord_x, coord_y, length, is_vertical=False):
+        if SeaPlayground.is_cell_suitable(field, coord_x, coord_y, length, is_vertical):
+            SeaPlayground._set_ship(field, coord_x, coord_y, length, is_vertical)
+            SeaPlayground._set_border(field, coord_x, coord_y, length, is_vertical)
         else:
             raise IncorrectShipPosition()
 
-    def is_cell_correct(self, coord_x, coord_y, length, is_vertical=False):
-        next_cell = partial(Field.next_cell, coord_x, coord_y, is_vertical=is_vertical)
-        check = lambda x, y: self._field.is_coord_correct(x, y) and self._field.get(x, y) is Cell.EMPTY
+    @staticmethod
+    def is_cell_suitable(field, coord_x, coord_y, length, is_vertical=False):
+        next_cell = partial(SeaField.next_cell, coord_x, coord_y, is_vertical=is_vertical)
+        check = lambda x, y: field.is_coord_correct(x, y) and field.get(x, y) is Cell.EMPTY
         return all([check(*next_cell(i)) for i in range(length)])
 
-    def get_suitable_cells(self, length):
+    @staticmethod
+    def get_suitable_cells(field, length):
         return [(cell.x, cell.y, is_vertical)
-                for cell, is_vertical in product(self.cells, (True, False))
-                if self.is_cell_correct(cell.x, cell.y, length, is_vertical)]
+                for cell, is_vertical in product(field.cells, (True, False))
+                if SeaPlayground.is_cell_suitable(field, cell.x, cell.y, length, is_vertical)]
 
-    def put_ship_random(self, length):
-        cells = self.get_suitable_cells(length)
+    @staticmethod
+    def _put_ship_random(field, length):
+        cells = SeaPlayground.get_suitable_cells(field, length)
         if not cells:
             raise NoSpaceLeft()
-        coord_x, coord_y, is_vertical = choice(self.get_suitable_cells(length))
-        self.set_ship(coord_x, coord_y, length, is_vertical)
-        self.set_border(coord_x, coord_y, length, is_vertical)
+        coord_x, coord_y, is_vertical = choice(cells)
+        SeaPlayground._set_ship(field, coord_x, coord_y, length, is_vertical)
+        SeaPlayground._set_border(field, coord_x, coord_y, length, is_vertical)
+
+    @staticmethod
+    def put_ships_random(field, fleet:list=None):
+        fleet = fleet if fleet else STANDARD_SHIP_FLEET
+        for length in fleet:
+            SeaPlayground._put_ship_random(field, length)
+
+    @staticmethod
+    @check_coordinate
+    def income_shoot(field, coord_x, coord_y):
+        result = Cell.HIT if field.get(coord_x, coord_y) == Cell.SHIP else Cell.MISSED
+        field.set(coord_x, coord_y, result)
+        return result == Cell.HIT
+
+    @staticmethod
+    def find_target(field):
+        return choice([(cell.x, cell.y) for cell in field.cells if cell.value is Cell.EMPTY])
+
+    @staticmethod
+    @check_coordinate
+    def target_answer(field, coord_x, coord_y, hit=False):
+        answer = Cell.HIT if hit else Cell.MISSED
+        field.set(coord_x, coord_y, answer)
