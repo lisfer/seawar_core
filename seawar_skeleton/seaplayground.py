@@ -147,11 +147,15 @@ class SeaPlayground:
 
     @staticmethod
     def _find_ship(field, coord_x, coord_y):
-        if field.get(coord_x, coord_y) != Cell.SHIP:
+        if field.get(coord_x, coord_y) not in (Cell.SHIP, Cell.HIT):
             return []
         out = [(coord_x, coord_y)]
         for step, is_vertical in product([-1, 1], [True, False]):
             out.extend(takewhile(
-                lambda cell: (field.is_coord_correct(*cell) and field.get(*cell) == Cell.SHIP),
+                lambda cell: (field.is_coord_correct(*cell) and field.get(*cell) in (Cell.SHIP, Cell.HIT)),
                 field.next_cell(coord_x, coord_y, is_vertical, None, step)))
         return out
+
+    @staticmethod
+    def _is_ship_killed(field, coord_x, coord_y):
+        return all([field.get(*cell) == Cell.HIT for cell in SeaPlayground._find_ship(field, coord_x, coord_y)])

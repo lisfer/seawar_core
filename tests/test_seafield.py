@@ -155,3 +155,29 @@ class SeaPlaygroundTest(unittest.TestCase):
         base = SeaField(5, 5)
         ship = SeaPlayground._find_ship(base, 1, 2)
         assert ship == []
+
+    def test_is_killed_ship_alive(self):
+        base = SeaField(5, 5)
+        base.set(1, 2, Cell.SHIP)
+        base.set(1, 3, Cell.SHIP)
+        base.set(1, 4, Cell.SHIP)
+        assert SeaPlayground._is_ship_killed(base, 1, 3) is False
+
+    def test_is_killed_ship_injured(self):
+        base = SeaField(5, 5)
+        base.set(1, 2, Cell.HIT)
+        base.set(1, 3, Cell.HIT)
+        base.set(1, 4, Cell.SHIP)
+        assert SeaPlayground._is_ship_killed(base, 1, 3) is False
+
+        base.set(1, 2, Cell.HIT)
+        base.set(1, 3, Cell.SHIP)
+        base.set(1, 4, Cell.HIT)
+        assert SeaPlayground._is_ship_killed(base, 1, 3) is False
+
+    def test_is_killed_ship_killed(self):
+        base = SeaField(5, 5)
+        base.set(1, 2, Cell.HIT)
+        base.set(1, 3, Cell.HIT)
+        base.set(1, 4, Cell.HIT)
+        assert SeaPlayground._is_ship_killed(base, 1, 3) is True
