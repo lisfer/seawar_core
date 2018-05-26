@@ -255,3 +255,11 @@ class ComputerPlayerTest(unittest.TestCase):
         base.set(5, 5, Cell.PROBABLY_SHIP)
         for i in range(10):
             assert ComputerPlayer.find_target(base) == (5, 5)
+
+    def test_target_answer_clean_rate(self):
+        base = SeaField(5, 5)
+        probably_cells = lambda: [(cell.x, cell.y) for cell in base._cells if cell.value == Cell.PROBABLY_SHIP]
+        ComputerPlayer.target_answer(base, 2, 2, Cell.HIT)
+        assert set(probably_cells()) == set([(2, 1), (2, 3), (1, 2), (3, 2)])
+        ComputerPlayer.target_answer(base, 2, 2, Cell.KILLED)
+        assert set(probably_cells()) == set()
