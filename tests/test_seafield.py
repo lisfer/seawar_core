@@ -249,3 +249,9 @@ class ComputerPlayerTest(unittest.TestCase):
                 assert cell.value is Cell.BORDER
             else:
                 assert cell.value is Cell.EMPTY
+
+    def test_find_target(self):
+        base = SeaField()
+        base.set(5, 5, Cell.PROBABLY_SHIP)
+        for i in range(10):
+            assert ComputerPlayer.find_target(base) == (5, 5)
