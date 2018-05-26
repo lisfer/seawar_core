@@ -108,11 +108,11 @@ class SeaPlaygroundTest(unittest.TestCase):
     def test_income_shoot(self):
         base = SeaField()
         SeaPlayground.put_ship(base, 2, 2, 3)
-        assert SeaPlayground.income_shoot(base, 3, 0) is False
-        assert SeaPlayground.income_shoot(base, 3, 1) is False
-        assert SeaPlayground.income_shoot(base, 3, 2) is True
-        assert SeaPlayground.income_shoot(base, 3, 3) is False
-        assert SeaPlayground.income_shoot(base, 3, 4) is False
+        assert SeaPlayground.income_shoot(base, 3, 0) is Cell.MISSED
+        assert SeaPlayground.income_shoot(base, 3, 1) is Cell.MISSED
+        assert SeaPlayground.income_shoot(base, 3, 2) is Cell.HIT
+        assert SeaPlayground.income_shoot(base, 3, 3) is Cell.MISSED
+        assert SeaPlayground.income_shoot(base, 3, 4) is Cell.MISSED
 
     def test_incorrect_income_shoot(self):
         base = SeaField()

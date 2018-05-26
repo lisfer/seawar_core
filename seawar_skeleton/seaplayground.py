@@ -23,6 +23,7 @@ class Cell:
     BORDER = 1
     SHIP = 10
     HIT = -10
+    KILLED = -20
     MISSED = -1
 
     def __init__(self, x, y):
@@ -134,9 +135,9 @@ class SeaPlayground:
     @staticmethod
     @check_coordinate
     def income_shoot(field, coord_x, coord_y):
-        result = Cell.HIT if field.get(coord_x, coord_y) == Cell.SHIP else Cell.MISSED
+        result = Cell.HIT if field.is_ship_cell(coord_x, coord_y) else Cell.MISSED
         field.set(coord_x, coord_y, result)
-        return result == Cell.HIT
+        return result == Cell.HIT and SeaPlayground._is_ship_killed(field, coord_x, coord_y) and Cell.KILLED or result
 
     @staticmethod
     def find_target(field):
