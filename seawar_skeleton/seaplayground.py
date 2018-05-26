@@ -66,6 +66,9 @@ class SeaField:
     def is_coord_correct(self, coord_x, coord_y):
         return (0 <= coord_x < self.max_x) and (0 <= coord_y < self.max_y)
 
+    def is_ship_cell(self, coord_x, coord_y):
+        return self.get(coord_x, coord_y) in (Cell.SHIP, Cell.HIT)
+
 
 def check_coordinate(f):
     def decor(field, coord_x, coord_y, *args, **kwargs):
@@ -147,12 +150,10 @@ class SeaPlayground:
 
     @staticmethod
     def _find_ship(field, coord_x, coord_y):
-        if field.get(coord_x, coord_y) not in (Cell.SHIP, Cell.HIT):
-            return []
-        out = [(coord_x, coord_y)]
+        out = [(coord_x, coord_y)] if field.is_ship_cell(coord_x, coord_y) else []
         for step, is_vertical in product([-1, 1], [True, False]):
             out.extend(takewhile(
-                lambda cell: (field.is_coord_correct(*cell) and field.get(*cell) in (Cell.SHIP, Cell.HIT)),
+                lambda cell: (field.is_coord_correct(*cell) and field.is_ship_cell(*cell)),
                 field.next_cell(coord_x, coord_y, is_vertical, None, step)))
         return out
 
