@@ -1,20 +1,21 @@
 import unittest
+from itertools import chain
 
 from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField, \
-    IncorrectCoordinate
+    IncorrectCoordinate, ComputerPlayer
 
 
 class SeaPlaygroundTest(unittest.TestCase):
 
     def test_create(self):
         base = SeaField()
-        assert len(base.cells) == 100
+        assert len(base._cells) == 100
 
     def test_set_ship(self):
         base = SeaField(5, 5)
         SeaPlayground._set_ship(base, 1, 1, 3)
         ship = [(1, 1), (2, 1), (3, 1)]
-        for cell in base.cells:
+        for cell in base._cells:
             if (cell.x, cell.y) in ship:
                 assert cell.value == Cell.SHIP
             else:
@@ -26,7 +27,7 @@ class SeaPlaygroundTest(unittest.TestCase):
         border = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0),
                   (0, 1), (4, 1),
                   (0, 2), (1, 2), (2, 2), (3, 2), (4, 2)]
-        for cell in base.cells:
+        for cell in base._cells:
             if (cell.x, cell.y) in border:
                 assert cell.value == Cell.BORDER
             else:
@@ -38,7 +39,7 @@ class SeaPlaygroundTest(unittest.TestCase):
         SeaPlayground._set_border(base, 2, 3, 2)
         border = [(1, 0), (1, 1), (0, 2), (1, 2),
                   (2, 2), (3, 2), (1, 3)]
-        for cell in base.cells:
+        for cell in base._cells:
             if (cell.x, cell.y) in border:
                 assert cell.value == Cell.BORDER
             else:
@@ -52,7 +53,7 @@ class SeaPlaygroundTest(unittest.TestCase):
                   (2, 0), (2, 4),
                   (3, 0), (3, 1), (3, 2), (3, 3), (3, 4)]
 
-        for cell in base.cells:
+        for cell in base._cells:
             if (cell.x, cell.y) in ship:
                 assert cell.value == Cell.SHIP
             elif (cell.x, cell.y) in border:
@@ -103,7 +104,7 @@ class SeaPlaygroundTest(unittest.TestCase):
     def test_put_random_many(self):
         base = SeaField()
         SeaPlayground.put_ships_random(base)
-        assert len([cell for cell in base.cells if cell.value == Cell.SHIP]) == 20
+        assert len([cell for cell in base._cells if cell.value == Cell.SHIP]) == 20
 
     def test_income_shoot(self):
         base = SeaField()
@@ -121,17 +122,12 @@ class SeaPlaygroundTest(unittest.TestCase):
         with self.assertRaises(IncorrectCoordinate):
             SeaPlayground.income_shoot(base, 11, 0)
 
-    def test_find_target(self):
-        base = SeaField(2, 2)
-        list(map(base.set, (0, 0, 1), (0, 1, 0), (1, 1, 1)))
-        assert SeaPlayground.find_target(base) == (1, 1)
-
     def test_target_anwer_mark_cell(self):
         base = SeaField(5, 5)
         SeaPlayground._target_answer_mark_cell(base, 1, 1, Cell.MISSED)
         SeaPlayground._target_answer_mark_cell(base, 2, 2, Cell.HIT)
         SeaPlayground._target_answer_mark_cell(base, 3, 3, Cell.MISSED)
-        for cell in base.cells:
+        for cell in base._cells:
             if (cell.x, cell.y) in ((1, 1), (3, 3)):
                 assert cell.value == Cell.MISSED
             elif cell.x == 2 and cell.y == 2:
@@ -193,7 +189,7 @@ class SeaPlaygroundTest(unittest.TestCase):
         SeaPlayground._target_answer_mark_border(base, [(3, 3)], Cell.HIT)
         SeaPlayground._target_answer_mark_border(base, [(0, 4)], Cell.MISSED)
         SeaPlayground._target_answer_mark_border(base, [(4, 0)], Cell.MISSED)
-        for cell in base.cells:
+        for cell in base._cells:
             if (cell.x, cell.y) in ((0, 1), (1, 0), (1, 1),
                                     (2, 4), (4, 2), (4, 4)):
                 assert cell.value == Cell.BORDER
@@ -208,7 +204,7 @@ class SeaPlaygroundTest(unittest.TestCase):
         SeaPlayground.target_answer(base, 1, 1, Cell.MISSED)
         SeaPlayground.target_answer(base, 2, 1, Cell.MISSED)
         SeaPlayground.target_answer(base, 3, 1, Cell.KILLED)
-        for cell in base.cells:
+        for cell in base._cells:
             if cell.x in (1, 2, 3) and cell.y in (0, 2):
                 assert cell.value == Cell.BORDER
             elif (cell.x, cell.y) in ((1, 1), (2, 1)):
@@ -219,3 +215,11 @@ class SeaPlaygroundTest(unittest.TestCase):
                 assert cell.value == Cell.KILLED
             else:
                 assert cell.value == Cell.EMPTY
+
+
+class ComputerPlayerTest:
+
+    def test_find_target(self):
+        base = SeaField(2, 2)
+        list(map(base.set, (0, 0, 1), (0, 1, 0), (1, 1, 1)))
+        assert ComputerPlayer.find_target(base) == (1, 1)

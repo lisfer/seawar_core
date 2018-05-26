@@ -25,6 +25,7 @@ class Cell:
     HIT = -10
     KILLED = -20
     MISSED = -1
+    PROBABLY_SHIP = 5
 
     def __init__(self, x, y):
         self.x = x
@@ -41,7 +42,8 @@ class SeaField:
         self.max_x = max_x
         self.max_y = max_y
         self._field = [[Cell(i, j) for i in range(max_x)] for j in range(max_y)]
-        self.cells = list(chain(*self._field))
+        self._cells = list(chain(*self._field))
+        self.cells = [(cell.x, cell.y) for cell in self._cells]
 
     def __repr__(self):
         out = 'Field (max_x={}; max_y={})'.format(self.max_x, self.max_y)
@@ -67,8 +69,11 @@ class SeaField:
     def is_coord_correct(self, coord_x, coord_y):
         return (0 <= coord_x < self.max_x) and (0 <= coord_y < self.max_y)
 
-    def is_ship_cell(self, coord_x, coord_y):
+    def is_cell_ship(self, coord_x, coord_y):
         return self.get(coord_x, coord_y) in (Cell.SHIP, Cell.HIT, Cell.KILLED)
+
+    def is_cell_empty(self, coord_x, coord_y):
+        return self.get(coord_x, coord_y) in (Cell.EMPTY, Cell.PROBABLY_SHIP)
 
 
 def check_coordinate(f):
@@ -91,8 +96,7 @@ class SeaPlayground:
             cells = SeaPlayground._find_border_cells(field, coord_x, coord_y, length, is_vertical)
         else:
             cells = SeaPlayground._find_cell_corners(coord_x, coord_y)
-
-        [field.set(value=Cell.BORDER, *cell) for cell in cells if field.get(*cell) == Cell.EMPTY]
+        [field.set(value=Cell.BORDER, *cell) for cell in cells if field.is_cell_empty(*cell)]
 
     @staticmethod
     @check_coordinate
@@ -105,14 +109,14 @@ class SeaPlayground:
 
     @staticmethod
     def is_cell_suitable(field, coord_x, coord_y, length, is_vertical=False):
-        check = lambda x, y: field.is_coord_correct(x, y) and field.get(x, y) is Cell.EMPTY
+        check = lambda x, y: field.is_coord_correct(x, y) and field.is_cell_empty(x, y)
         return all([check(*cell) for cell in SeaField.next_cell(coord_x, coord_y, is_vertical, length)])
 
     @staticmethod
     def get_suitable_cells(field, length):
-        return [(cell.x, cell.y, is_vertical)
-                for cell, is_vertical in product(field.cells, (True, False))
-                if SeaPlayground.is_cell_suitable(field, cell.x, cell.y, length, is_vertical)]
+        return [(x, y, is_vertical)
+                for (x, y), is_vertical in product(field.cells, (True, False))
+                if SeaPlayground.is_cell_suitable(field, x, y, length, is_vertical)]
 
     @staticmethod
     def _put_ship_random(field, length):
@@ -132,13 +136,9 @@ class SeaPlayground:
     @staticmethod
     @check_coordinate
     def income_shoot(field, coord_x, coord_y):
-        result = Cell.HIT if field.is_ship_cell(coord_x, coord_y) else Cell.MISSED
+        result = Cell.HIT if field.is_cell_ship(coord_x, coord_y) else Cell.MISSED
         field.set(coord_x, coord_y, result)
         return result == Cell.HIT and SeaPlayground._is_ship_killed(field, coord_x, coord_y) and Cell.KILLED or result
-
-    @staticmethod
-    def find_target(field):
-        return choice([(cell.x, cell.y) for cell in field.cells if cell.value is Cell.EMPTY])
 
     @staticmethod
     @check_coordinate
@@ -165,10 +165,10 @@ class SeaPlayground:
 
     @staticmethod
     def _find_ship_cells(field, coord_x, coord_y):
-        out = [(coord_x, coord_y)] if field.is_ship_cell(coord_x, coord_y) else []
+        out = [(coord_x, coord_y)] if field.is_cell_ship(coord_x, coord_y) else []
         for step, is_vertical in product([-1, 1], [True, False]):
             out.extend(takewhile(
-                lambda cell: (field.is_coord_correct(*cell) and field.is_ship_cell(*cell)),
+                lambda cell: (field.is_coord_correct(*cell) and field.is_cell_ship(*cell)),
                 field.next_cell(coord_x, coord_y, is_vertical, None, step)))
         return out
 
@@ -198,3 +198,23 @@ class SeaPlayground:
     @staticmethod
     def _find_cell_corners(*coords):
         return list(map(lambda c, d: (c[0] + d[0], c[1] + d[1]), [coords] * 4, product((-1, 1), (-1, 1))))
+
+    @staticmethod
+    def _find_cell_ribs(*coords):
+        return list(map(lambda c, d: (c[0] + d[0], c[1] + d[1]), [coords] * 4, ((-1, 0), (1, 0), (0, -1), (0, 1))))
+
+
+class ComputerPlayer:
+
+    @staticmethod
+    def target_answer(field, coord_x, coord_y, answer=Cell.MISSED):
+        SeaPlayground.target_answer(field, coord_x, coord_y, answer)
+        if answer is Cell.HIT:
+            [field.set(value=Cell.PROBABLY_SHIP, *cell) for cell in SeaPlayground._find_cell_ribs(coord_x, coord_y)]
+
+    @staticmethod
+    def find_target(field):
+        cells = [cell for cell in field.cells if field.get(*cell) == Cell.PROBABLY_SHIP]
+        if not cells:
+            cells = [cell for cell in field.cells if field.is_cell_empty(*cell)]
+        return choice(cells)
