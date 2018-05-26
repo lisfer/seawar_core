@@ -126,11 +126,11 @@ class SeaPlaygroundTest(unittest.TestCase):
         list(map(base.set, (0, 0, 1), (0, 1, 0), (1, 1, 1)))
         assert SeaPlayground.find_target(base) == (1, 1)
 
-    def test_target_anwer(self):
+    def test_target_anwer_mark_cell(self):
         base = SeaField(5, 5)
-        SeaPlayground.target_answer(base, 1, 1, False)
-        SeaPlayground.target_answer(base, 2, 2, True)
-        SeaPlayground.target_answer(base, 3, 3, False)
+        SeaPlayground._target_answer_mark_cell(base, 1, 1, Cell.MISSED)
+        SeaPlayground._target_answer_mark_cell(base, 2, 2, Cell.HIT)
+        SeaPlayground._target_answer_mark_cell(base, 3, 3, Cell.MISSED)
         for cell in base.cells:
             if (cell.x, cell.y) in ((1, 1), (3, 3)):
                 assert cell.value == Cell.MISSED
@@ -185,3 +185,37 @@ class SeaPlaygroundTest(unittest.TestCase):
     def test_find_ship_vector(self):
         assert SeaPlayground._find_ship_vector([(1, 1), (2, 1), (3, 1)]) == (1, 1, 3, False)
         assert SeaPlayground._find_ship_vector([(1, 0), (1, 1), (1, 2), (1, 3)]) == (1, 0, 4, True)
+
+    def test_answer_target_mark_border(self):
+        base = SeaField(5, 5)
+        base.set(2, 2, Cell.MISSED)
+        SeaPlayground._target_answer_mark_border(base, [(0, 0)], Cell.KILLED)
+        SeaPlayground._target_answer_mark_border(base, [(3, 3)], Cell.HIT)
+        SeaPlayground._target_answer_mark_border(base, [(0, 4)], Cell.MISSED)
+        SeaPlayground._target_answer_mark_border(base, [(4, 0)], Cell.MISSED)
+        for cell in base.cells:
+            if (cell.x, cell.y) in ((0, 1), (1, 0), (1, 1),
+                                    (2, 4), (4, 2), (4, 4)):
+                assert cell.value == Cell.BORDER
+            elif cell.x == 2 and cell.y == 2:
+                assert cell.value == Cell.MISSED
+            else:
+                assert cell.value == Cell.EMPTY
+
+    def test_answet_target(self):
+        base = SeaField(4, 4)
+        SeaPlayground.target_answer(base, 0, 1, Cell.HIT)
+        SeaPlayground.target_answer(base, 1, 1, Cell.MISSED)
+        SeaPlayground.target_answer(base, 2, 1, Cell.MISSED)
+        SeaPlayground.target_answer(base, 3, 1, Cell.KILLED)
+        for cell in base.cells:
+            if cell.x in (1, 2, 3) and cell.y in (0, 2):
+                assert cell.value == Cell.BORDER
+            elif (cell.x, cell.y) in ((1, 1), (2, 1)):
+                assert cell.value == Cell.MISSED
+            elif (cell.x, cell.y) == (0, 1):
+                assert cell.value == Cell.HIT
+            elif (cell.x, cell.y) == (3, 1):
+                assert cell.value == Cell.KILLED
+            else:
+                assert cell.value == Cell.EMPTY

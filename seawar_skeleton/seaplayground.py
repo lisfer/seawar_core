@@ -68,7 +68,7 @@ class SeaField:
         return (0 <= coord_x < self.max_x) and (0 <= coord_y < self.max_y)
 
     def is_ship_cell(self, coord_x, coord_y):
-        return self.get(coord_x, coord_y) in (Cell.SHIP, Cell.HIT)
+        return self.get(coord_x, coord_y) in (Cell.SHIP, Cell.HIT, Cell.KILLED)
 
 
 def check_coordinate(f):
@@ -86,9 +86,13 @@ class SeaPlayground:
         [field.set(value=Cell.SHIP, *cell) for cell in SeaField.next_cell(coord_x, coord_y, is_vertical, length)]
 
     @staticmethod
-    def _set_border(field, coord_x, coord_y, length, is_vertical=False):
-        cells = SeaPlayground._find_border_cells(field, coord_x, coord_y, length, is_vertical)
-        [field.set(value=Cell.BORDER, *cell) for cell in cells]
+    def _set_border(field, coord_x, coord_y, length=None, is_vertical=False):
+        if length:
+            cells = SeaPlayground._find_border_cells(field, coord_x, coord_y, length, is_vertical)
+        else:
+            cells = SeaPlayground._find_cell_corners(coord_x, coord_y)
+
+        [field.set(value=Cell.BORDER, *cell) for cell in cells if field.get(*cell) == Cell.EMPTY]
 
     @staticmethod
     @check_coordinate
@@ -138,9 +142,26 @@ class SeaPlayground:
 
     @staticmethod
     @check_coordinate
-    def target_answer(field, coord_x, coord_y, hit=False):
-        answer = Cell.HIT if hit else Cell.MISSED
+    def target_answer(field, coord_x, coord_y, answer=Cell.MISSED):
+        shooted_cells = SeaPlayground._target_answer_mark_cell(field, coord_x, coord_y, answer)
+        SeaPlayground._target_answer_mark_border(field, shooted_cells, answer)
+
+    @staticmethod
+    def _target_answer_mark_cell(field, coord_x, coord_y, answer):
         field.set(coord_x, coord_y, answer)
+        if answer is Cell.KILLED:
+            ship_cells = SeaPlayground._find_ship_cells(field, coord_x, coord_y)
+            [field.set(value=answer, *cell) for cell in ship_cells]
+        else:
+            ship_cells = [(coord_x, coord_y)]
+        return ship_cells
+
+    @staticmethod
+    def _target_answer_mark_border(field, shooted_cells, answer):
+        if answer == Cell.KILLED:
+            SeaPlayground._set_border(field, *SeaPlayground._find_ship_vector(shooted_cells))
+        elif answer == Cell.HIT:
+            SeaPlayground._set_border(field, *shooted_cells[0])
 
     @staticmethod
     def _find_ship_cells(field, coord_x, coord_y):
@@ -164,6 +185,7 @@ class SeaPlayground:
 
     @staticmethod
     def _find_border_cells(field, coord_x, coord_y, length, is_vertical=False):
+
         v_length, h_length = (length, 1) if is_vertical else (1, length)
 
         cells = (list(SeaField.next_cell(coord_x - 1, coord_y - 1, True, v_length + 2)) +
@@ -172,3 +194,7 @@ class SeaPlayground:
                  list(SeaField.next_cell(coord_x, coord_y + v_length, False, h_length)))
 
         return filter(lambda cell: field.is_coord_correct(*cell), cells)
+
+    @staticmethod
+    def _find_cell_corners(*coords):
+        return list(map(lambda c, d: (c[0] + d[0], c[1] + d[1]), [coords] * 4, product((-1, 1), (-1, 1))))
