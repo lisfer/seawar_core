@@ -216,10 +216,36 @@ class SeaPlaygroundTest(unittest.TestCase):
             else:
                 assert cell.value == Cell.EMPTY
 
+    def test_find_corners(self):
+        base = SeaField(5, 5)
+        assert set(SeaPlayground._find_cell_corners(base, 3, 3)) == set([(2, 2), (4, 2), (2, 4), (4, 4)])
+        assert set(SeaPlayground._find_cell_corners(base, 0, 0)) == set([(1, 1)])
 
-class ComputerPlayerTest:
+
+class ComputerPlayerTest(unittest.TestCase):
 
     def test_find_target(self):
         base = SeaField(2, 2)
         list(map(base.set, (0, 0, 1), (0, 1, 0), (1, 1, 1)))
         assert ComputerPlayer.find_target(base) == (1, 1)
+
+    def test_target_answer_no_rate(self):
+        base = SeaField(4, 4)
+        ComputerPlayer.target_answer(base, 0, 0, Cell.MISSED)
+        ComputerPlayer.target_answer(base, 2, 2, Cell.MISSED)
+        ComputerPlayer.target_answer(base, 2, 2, Cell.KILLED)
+        assert len([cell for cell in base._cells if cell.value == Cell.PROBABLY_SHIP]) == 0
+
+    def test_target_answer_rate(self):
+        base = SeaField(5, 5)
+        ComputerPlayer.target_answer(base, 0, 0, Cell.HIT)
+        ComputerPlayer.target_answer(base, 2, 2, Cell.HIT)
+        for cell in base._cells:
+            if (cell.x, cell.y) in ((0, 1), (1, 0), (2, 1), (1, 2), (3, 2), (2, 3)):
+                assert cell.value is Cell.PROBABLY_SHIP
+            elif (cell.x, cell.y) in ((0, 0), (2, 2)):
+                assert cell.value is Cell.HIT
+            elif (cell.x, cell.y) in ((1, 1), (3, 1), (1, 3), (3, 3)):
+                assert cell.value is Cell.BORDER
+            else:
+                assert cell.value is Cell.EMPTY

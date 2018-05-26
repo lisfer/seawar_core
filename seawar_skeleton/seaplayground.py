@@ -60,6 +60,21 @@ class SeaField:
             yield (coord_x, coord_y)
             coord_x, coord_y = coord_x + step * (not is_vertical), coord_y + step * is_vertical
 
+    @staticmethod
+    def check_coordinates(f):
+        def decor(field, coord_x, coord_y, *args, **kwargs):
+            if field.is_coord_correct(coord_x, coord_y):
+                return f(field, coord_x, coord_y, *args, **kwargs)
+            raise IncorrectCoordinate(f'({coord_x}: {coord_y}) for Field({field.max_x}:{field.max_y})')
+
+        return decor
+
+    @staticmethod
+    def filter_correct_coordinates(f):
+        def decor(field, *args, **kwargs):
+            return [cell for cell in f(*args, **kwargs) if field.is_coord_correct(*cell)]
+        return decor
+
     def set(self, coord_x, coord_y, value):
         self._field[coord_y][coord_x].value = value
 
@@ -76,14 +91,6 @@ class SeaField:
         return self.get(coord_x, coord_y) in (Cell.EMPTY, Cell.PROBABLY_SHIP)
 
 
-def check_coordinate(f):
-    def decor(field, coord_x, coord_y, *args, **kwargs):
-        if field.is_coord_correct(coord_x, coord_y):
-            return f(field, coord_x, coord_y, *args, **kwargs)
-        raise IncorrectCoordinate(f'({coord_x}: {coord_y}) for Field({field.max_x}:{field.max_y})')
-    return decor
-
-
 class SeaPlayground:
 
     @staticmethod
@@ -95,11 +102,11 @@ class SeaPlayground:
         if length:
             cells = SeaPlayground._find_border_cells(field, coord_x, coord_y, length, is_vertical)
         else:
-            cells = SeaPlayground._find_cell_corners(coord_x, coord_y)
+            cells = SeaPlayground._find_cell_corners(field, coord_x, coord_y)
         [field.set(value=Cell.BORDER, *cell) for cell in cells if field.is_cell_empty(*cell)]
 
     @staticmethod
-    @check_coordinate
+    @SeaField.check_coordinates
     def put_ship(field, coord_x, coord_y, length, is_vertical=False):
         if SeaPlayground.is_cell_suitable(field, coord_x, coord_y, length, is_vertical):
             SeaPlayground._set_ship(field, coord_x, coord_y, length, is_vertical)
@@ -134,14 +141,14 @@ class SeaPlayground:
             SeaPlayground._put_ship_random(field, length)
 
     @staticmethod
-    @check_coordinate
+    @SeaField.check_coordinates
     def income_shoot(field, coord_x, coord_y):
         result = Cell.HIT if field.is_cell_ship(coord_x, coord_y) else Cell.MISSED
         field.set(coord_x, coord_y, result)
         return result == Cell.HIT and SeaPlayground._is_ship_killed(field, coord_x, coord_y) and Cell.KILLED or result
 
     @staticmethod
-    @check_coordinate
+    @SeaField.check_coordinates
     def target_answer(field, coord_x, coord_y, answer=Cell.MISSED):
         shooted_cells = SeaPlayground._target_answer_mark_cell(field, coord_x, coord_y, answer)
         SeaPlayground._target_answer_mark_border(field, shooted_cells, answer)
@@ -184,24 +191,23 @@ class SeaPlayground:
         return x1, y1, length + 1, is_vertical
 
     @staticmethod
-    def _find_border_cells(field, coord_x, coord_y, length, is_vertical=False):
-
+    @SeaField.filter_correct_coordinates
+    def _find_border_cells(coord_x, coord_y, length, is_vertical=False):
         v_length, h_length = (length, 1) if is_vertical else (1, length)
-
-        cells = (list(SeaField.next_cell(coord_x - 1, coord_y - 1, True, v_length + 2)) +
-                 list(SeaField.next_cell(coord_x + h_length, coord_y - 1, True, v_length + 2)) +
-                 list(SeaField.next_cell(coord_x, coord_y - 1, False, h_length)) +
-                 list(SeaField.next_cell(coord_x, coord_y + v_length, False, h_length)))
-
-        return filter(lambda cell: field.is_coord_correct(*cell), cells)
+        return (list(SeaField.next_cell(coord_x - 1, coord_y - 1, True, v_length + 2)) +
+                list(SeaField.next_cell(coord_x + h_length, coord_y - 1, True, v_length + 2)) +
+                list(SeaField.next_cell(coord_x, coord_y - 1, False, h_length)) +
+                list(SeaField.next_cell(coord_x, coord_y + v_length, False, h_length)))
 
     @staticmethod
+    @SeaField.filter_correct_coordinates
     def _find_cell_corners(*coords):
-        return list(map(lambda c, d: (c[0] + d[0], c[1] + d[1]), [coords] * 4, product((-1, 1), (-1, 1))))
+        return map(lambda c, d: (c[0] + d[0], c[1] + d[1]), [coords] * 4, product((-1, 1), (-1, 1)))
 
     @staticmethod
+    @SeaField.filter_correct_coordinates
     def _find_cell_ribs(*coords):
-        return list(map(lambda c, d: (c[0] + d[0], c[1] + d[1]), [coords] * 4, ((-1, 0), (1, 0), (0, -1), (0, 1))))
+        return map(lambda c, d: (c[0] + d[0], c[1] + d[1]), [coords] * 4, ((-1, 0), (1, 0), (0, -1), (0, 1)))
 
 
 class ComputerPlayer:
@@ -210,7 +216,8 @@ class ComputerPlayer:
     def target_answer(field, coord_x, coord_y, answer=Cell.MISSED):
         SeaPlayground.target_answer(field, coord_x, coord_y, answer)
         if answer is Cell.HIT:
-            [field.set(value=Cell.PROBABLY_SHIP, *cell) for cell in SeaPlayground._find_cell_ribs(coord_x, coord_y)]
+            [field.set(value=Cell.PROBABLY_SHIP, *cell)
+             for cell in SeaPlayground._find_cell_ribs(field, coord_x, coord_y)]
 
     @staticmethod
     def find_target(field):
