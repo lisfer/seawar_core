@@ -263,3 +263,17 @@ class ComputerPlayerTest(unittest.TestCase):
         assert set(probably_cells()) == set([(2, 1), (2, 3), (1, 2), (3, 2)])
         ComputerPlayer.target_answer(base, 2, 2, Cell.KILLED)
         assert set(probably_cells()) == set()
+
+    def test_make_shoots(self):
+        enemy_field = SeaField(5, 5)
+        target_field = SeaField(5, 5)
+
+        SeaPlayground.put_ship(enemy_field, 1, 3, 3)
+        target_field.set(0, 3, Cell.MISSED)
+        target_field.set(1, 2, Cell.MISSED)
+        target_field.set(1, 4, Cell.MISSED)
+        target_field.set(1, 3, Cell.PROBABLY_SHIP)
+
+        assert ComputerPlayer.make_shoot(target_field, enemy_field) == (1, 3, Cell.HIT)
+        assert ComputerPlayer.make_shoot(target_field, enemy_field) == (2, 3, Cell.HIT)
+        assert ComputerPlayer.make_shoot(target_field, enemy_field) == (3, 3, Cell.KILLED)

@@ -217,7 +217,8 @@ class ComputerPlayer:
         SeaPlayground.target_answer(field, coord_x, coord_y, answer)
         if answer is Cell.HIT:
             [field.set(value=Cell.PROBABLY_SHIP, *cell)
-             for cell in SeaPlayground._find_cell_ribs(field, coord_x, coord_y)]
+             for cell in SeaPlayground._find_cell_ribs(field, coord_x, coord_y)
+             if field.is_cell_empty(*cell)]
 
     @staticmethod
     def find_target(field):
@@ -225,3 +226,11 @@ class ComputerPlayer:
         if not cells:
             cells = [cell for cell in field.cells if field.is_cell_empty(*cell)]
         return choice(cells)
+
+    @staticmethod
+    def make_shoot(target_field, enemy_field):
+        x, y = ComputerPlayer.find_target(target_field)
+        answer = SeaPlayground.income_shoot(enemy_field, x, y)
+        ComputerPlayer.target_answer(target_field, x, y, answer)
+        print(x, y, answer)
+        return x, y, answer
