@@ -87,15 +87,8 @@ class SeaPlayground:
 
     @staticmethod
     def _set_border(field, coord_x, coord_y, length, is_vertical=False):
-        v_length, h_length = (length, 1) if is_vertical else (1, length)
-        cells = []
-
-        cells.extend([cell for cell in SeaField.next_cell(coord_x - 1, coord_y - 1, True, v_length + 2)])
-        cells.extend([cell for cell in SeaField.next_cell(coord_x + h_length, coord_y - 1, True, v_length + 2)])
-        cells.extend([cell for cell in SeaField.next_cell(coord_x, coord_y - 1, False, h_length)])
-        cells.extend([cell for cell in SeaField.next_cell(coord_x, coord_y + v_length, False, h_length)])
-
-        [field.set(value=Cell.BORDER, *cell) for cell in cells if field.is_coord_correct(*cell)]
+        cells = SeaPlayground._find_border_cells(field, coord_x, coord_y, length, is_vertical)
+        [field.set(value=Cell.BORDER, *cell) for cell in cells]
 
     @staticmethod
     @check_coordinate
@@ -169,3 +162,13 @@ class SeaPlayground:
         is_vertical = y1 + length == y2
         return x1, y1, length + 1, is_vertical
 
+    @staticmethod
+    def _find_border_cells(field, coord_x, coord_y, length, is_vertical=False):
+        v_length, h_length = (length, 1) if is_vertical else (1, length)
+
+        cells = (list(SeaField.next_cell(coord_x - 1, coord_y - 1, True, v_length + 2)) +
+                 list(SeaField.next_cell(coord_x + h_length, coord_y - 1, True, v_length + 2)) +
+                 list(SeaField.next_cell(coord_x, coord_y - 1, False, h_length)) +
+                 list(SeaField.next_cell(coord_x, coord_y + v_length, False, h_length)))
+
+        return filter(lambda cell: field.is_coord_correct(*cell), cells)
