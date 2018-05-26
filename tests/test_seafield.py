@@ -142,18 +142,18 @@ class SeaPlaygroundTest(unittest.TestCase):
     def test_find_ship(self):
         base = SeaField(5, 5)
         SeaPlayground.put_ship(base, 1, 1, 3)
-        ship = SeaPlayground._find_ship(base, 2, 1)
+        ship = SeaPlayground._find_ship_cells(base, 2, 1)
         assert set(ship) == set([(1, 1), (2, 1), (3, 1)])
 
     def test_find_ship_vertical(self):
         base = SeaField(5, 5)
         SeaPlayground.put_ship(base, 1, 1, 3, True)
-        ship = SeaPlayground._find_ship(base, 1, 2)
+        ship = SeaPlayground._find_ship_cells(base, 1, 2)
         assert set(ship) == set([(1, 1), (1, 2), (1, 3)])
 
     def test_find_abcent(self):
         base = SeaField(5, 5)
-        ship = SeaPlayground._find_ship(base, 1, 2)
+        ship = SeaPlayground._find_ship_cells(base, 1, 2)
         assert ship == []
 
     def test_is_killed_ship_alive(self):
@@ -181,3 +181,7 @@ class SeaPlaygroundTest(unittest.TestCase):
         base.set(1, 3, Cell.HIT)
         base.set(1, 4, Cell.HIT)
         assert SeaPlayground._is_ship_killed(base, 1, 3) is True
+
+    def test_find_ship_vector(self):
+        assert SeaPlayground._find_ship_vector([(1, 1), (2, 1), (3, 1)]) == (1, 1, 3, False)
+        assert SeaPlayground._find_ship_vector([(1, 0), (1, 1), (1, 2), (1, 3)]) == (1, 0, 4, True)

@@ -150,7 +150,7 @@ class SeaPlayground:
         field.set(coord_x, coord_y, answer)
 
     @staticmethod
-    def _find_ship(field, coord_x, coord_y):
+    def _find_ship_cells(field, coord_x, coord_y):
         out = [(coord_x, coord_y)] if field.is_ship_cell(coord_x, coord_y) else []
         for step, is_vertical in product([-1, 1], [True, False]):
             out.extend(takewhile(
@@ -160,4 +160,12 @@ class SeaPlayground:
 
     @staticmethod
     def _is_ship_killed(field, coord_x, coord_y):
-        return all([field.get(*cell) == Cell.HIT for cell in SeaPlayground._find_ship(field, coord_x, coord_y)])
+        return all([field.get(*cell) == Cell.HIT for cell in SeaPlayground._find_ship_cells(field, coord_x, coord_y)])
+
+    @staticmethod
+    def _find_ship_vector(ship_cells):
+        (x1, y1), (x2, y2) = map(min, zip(*ship_cells)), map(max, zip(*ship_cells))
+        length = max(x2 - x1, y2 - y1)
+        is_vertical = y1 + length == y2
+        return x1, y1, length + 1, is_vertical
+
