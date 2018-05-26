@@ -1,5 +1,4 @@
-from functools import partial
-from itertools import chain, product
+from itertools import chain, product, takewhile
 from random import choice
 
 
@@ -52,8 +51,11 @@ class SeaField:
         return out + '\n'
 
     @staticmethod
-    def next_cell(coord_x, coord_y, step, is_vertical=False):
-        return coord_x + step * (not is_vertical), coord_y + step * is_vertical
+    def next_cell(coord_x, coord_y, is_vertical=False, length=None, step=1):
+        cond = (lambda l: (lambda: True) if l is None else (lambda i=iter(range(l, -1, -1)): next(i)))(length)
+        while cond():
+            yield (coord_x, coord_y)
+            coord_x, coord_y = coord_x + step * (not is_vertical), coord_y + step * is_vertical
 
     def set(self, coord_x, coord_y, value):
         self._field[coord_y][coord_x].value = value
@@ -77,19 +79,18 @@ class SeaPlayground:
 
     @staticmethod
     def _set_ship(field, coord_x, coord_y, length, is_vertical=False):
-        next_cell = partial(SeaField.next_cell, coord_x, coord_y, is_vertical=is_vertical)
-        [field.set(value=Cell.SHIP, *next_cell(i)) for i in range(length)]
+        [field.set(value=Cell.SHIP, *cell) for cell in SeaField.next_cell(coord_x, coord_y, is_vertical, length)]
 
     @staticmethod
     def _set_border(field, coord_x, coord_y, length, is_vertical=False):
         v_length, h_length = (length, 1) if is_vertical else (1, length)
         cells = []
-        for i in range(v_length + 2):
-            cells.append(SeaField.next_cell(coord_x - 1, coord_y - 1, i, True))
-            cells.append(SeaField.next_cell(coord_x + h_length, coord_y - 1, i, True))
-        for i in range(h_length):
-            cells.append(SeaField.next_cell(coord_x, coord_y - 1, i, False))
-            cells.append(SeaField.next_cell(coord_x, coord_y + v_length, i, False))
+
+        cells.extend([cell for cell in SeaField.next_cell(coord_x - 1, coord_y - 1, True, v_length + 2)])
+        cells.extend([cell for cell in SeaField.next_cell(coord_x + h_length, coord_y - 1, True, v_length + 2)])
+        cells.extend([cell for cell in SeaField.next_cell(coord_x, coord_y - 1, False, h_length)])
+        cells.extend([cell for cell in SeaField.next_cell(coord_x, coord_y + v_length, False, h_length)])
+
         [field.set(value=Cell.BORDER, *cell) for cell in cells if field.is_coord_correct(*cell)]
 
     @staticmethod
@@ -103,9 +104,8 @@ class SeaPlayground:
 
     @staticmethod
     def is_cell_suitable(field, coord_x, coord_y, length, is_vertical=False):
-        next_cell = partial(SeaField.next_cell, coord_x, coord_y, is_vertical=is_vertical)
         check = lambda x, y: field.is_coord_correct(x, y) and field.get(x, y) is Cell.EMPTY
-        return all([check(*next_cell(i)) for i in range(length)])
+        return all([check(*cell) for cell in SeaField.next_cell(coord_x, coord_y, is_vertical, length)])
 
     @staticmethod
     def get_suitable_cells(field, length):
@@ -144,3 +144,14 @@ class SeaPlayground:
     def target_answer(field, coord_x, coord_y, hit=False):
         answer = Cell.HIT if hit else Cell.MISSED
         field.set(coord_x, coord_y, answer)
+
+    @staticmethod
+    def _find_ship(field, coord_x, coord_y):
+        if field.get(coord_x, coord_y) != Cell.SHIP:
+            return []
+        out = [(coord_x, coord_y)]
+        for step, is_vertical in product([-1, 1], [True, False]):
+            out.extend(takewhile(
+                lambda cell: (field.is_coord_correct(*cell) and field.get(*cell) == Cell.SHIP),
+                field.next_cell(coord_x, coord_y, is_vertical, None, step)))
+        return out

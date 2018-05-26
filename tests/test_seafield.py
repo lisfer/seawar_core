@@ -138,3 +138,20 @@ class SeaPlaygroundTest(unittest.TestCase):
                 assert cell.value == Cell.HIT
             else:
                 assert cell.value == Cell.EMPTY
+
+    def test_find_ship(self):
+        base = SeaField(5, 5)
+        SeaPlayground.put_ship(base, 1, 1, 3)
+        ship = SeaPlayground._find_ship(base, 2, 1)
+        assert set(ship) == set([(1, 1), (2, 1), (3, 1)])
+
+    def test_find_ship_vertical(self):
+        base = SeaField(5, 5)
+        SeaPlayground.put_ship(base, 1, 1, 3, True)
+        ship = SeaPlayground._find_ship(base, 1, 2)
+        assert set(ship) == set([(1, 1), (1, 2), (1, 3)])
+
+    def test_find_abcent(self):
+        base = SeaField(5, 5)
+        ship = SeaPlayground._find_ship(base, 1, 2)
+        assert ship == []
