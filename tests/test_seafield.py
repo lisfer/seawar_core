@@ -1,5 +1,5 @@
 import unittest
-from itertools import chain
+from itertools import chain, starmap
 
 from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField, \
     IncorrectCoordinate, ComputerPlayer, Matrix
@@ -226,8 +226,14 @@ class ComputerPlayerTest(unittest.TestCase):
 
     def test_find_target(self):
         comp = ComputerPlayer(2, 2)
-        list(map(comp.target_field.set, (0, 0, 1), (0, 1, 0), (1, 1, 1)))
+        list(starmap(comp.target_field.set, [(0, 0, 1), (0, 1, 1), (1, 0, 1)]))
         assert comp.select_target() == (1, 1)
+
+    def test_find_target_preferred(self):
+        comp = ComputerPlayer()
+        comp.target_field.set(5, 5, Cell.PROBABLY_SHIP)
+        for i in range(10):
+            assert comp.select_target() == (5, 5)
 
     def test_target_answer_no_rate(self):
         comp = ComputerPlayer(4, 4)
@@ -250,17 +256,11 @@ class ComputerPlayerTest(unittest.TestCase):
             else:
                 assert cell.value is Cell.EMPTY
 
-    def test_find_target(self):
-        comp = ComputerPlayer()
-        comp.target_field.set(5, 5, Cell.PROBABLY_SHIP)
-        for i in range(10):
-            assert comp.select_target() == (5, 5)
-
     def test_target_answer_clean_rate(self):
         comp = ComputerPlayer(5, 5)
         probably_cells = lambda: [(cell.x, cell.y) for cell in comp.target_field._cells if cell.value == Cell.PROBABLY_SHIP]
         comp.handle_shoot_answer(2, 2, Cell.HIT)
-        assert set(probably_cells()) == set([(2, 1), (2, 3), (1, 2), (3, 2)])
+        assert set(probably_cells()) == {(2, 1), (2, 3), (1, 2), (3, 2)}
         comp.handle_shoot_answer(2, 2, Cell.KILLED)
         assert set(probably_cells()) == set()
 
