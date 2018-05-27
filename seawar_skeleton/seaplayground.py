@@ -140,7 +140,7 @@ class SeaField(Matrix):
                    ((-1, 0), (1, 0), (0, -1), (0, 1)))
 
 
-class SeaPlayground:
+class _SeaPlaygroundShips:
 
     @staticmethod
     @check_coordinates
@@ -159,7 +159,7 @@ class SeaPlayground:
 
     @staticmethod
     def _put_ship_random(field, length):
-        cells = SeaPlayground.get_suitable_cells(field, length)
+        cells = _SeaPlaygroundShips.get_suitable_cells(field, length)
         if not cells:
             raise NoSpaceLeft()
         coord_x, coord_y, is_vertical = choice(cells)
@@ -170,20 +170,23 @@ class SeaPlayground:
     def put_ships_random(field, fleet:list=None):
         fleet = fleet if fleet else STANDARD_SHIP_FLEET
         for length in fleet:
-            SeaPlayground._put_ship_random(field, length)
+            _SeaPlaygroundShips._put_ship_random(field, length)
+
+
+class _SeaPlaygroundShoots:
 
     @staticmethod
     @check_coordinates
     def income_shoot_to(field, coord_x, coord_y):
         result = Cell.HIT if field.is_cell_ship(coord_x, coord_y) else Cell.MISSED
         field.set(coord_x, coord_y, result)
-        return result == Cell.HIT and SeaPlayground._is_ship_killed(field, coord_x, coord_y) and Cell.KILLED or result
+        return result == Cell.HIT and _SeaPlaygroundShoots._is_ship_killed(field, coord_x, coord_y) and Cell.KILLED or result
 
     @staticmethod
     @check_coordinates
     def shoot_answer_from(field, coord_x, coord_y, answer=Cell.MISSED):
-        shooted_cells = SeaPlayground._shoot_answer_mark_cell(field, coord_x, coord_y, answer)
-        SeaPlayground._shoot_answer_mark_border(field, shooted_cells, answer)
+        shooted_cells = _SeaPlaygroundShoots._shoot_answer_mark_cell(field, coord_x, coord_y, answer)
+        _SeaPlaygroundShoots._shoot_answer_mark_border(field, shooted_cells, answer)
 
     @staticmethod
     def _shoot_answer_mark_cell(field, coord_x, coord_y, answer):
@@ -205,6 +208,10 @@ class SeaPlayground:
     @staticmethod
     def _is_ship_killed(field, coord_x, coord_y):
         return all([field.get(*cell) == Cell.HIT for cell in field.find_ship_by_cells(coord_x, coord_y)])
+
+
+class SeaPlayground(_SeaPlaygroundShips, _SeaPlaygroundShoots):
+    pass
 
 
 class ComputerPlayer:
