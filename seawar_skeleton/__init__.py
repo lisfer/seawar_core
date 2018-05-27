@@ -1,3 +1,2 @@
-from .seaplayground import Cell, Matrix, SeaPlayground, IncorrectShipPosition, NoSpaceLeft, IncorrectCoordinate, \
-    ComputerPlayer
-
+from .seaplayground import STANDARD_SHIP_FLEET, IncorrectShipPosition, NoSpaceLeft, IncorrectCoordinate, Cell, Matrix, \
+    SeaField, SeaPlayground, ComputerPlayer

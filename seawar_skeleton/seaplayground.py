@@ -3,8 +3,8 @@ from random import choice
 
 
 STANDARD_SHIP_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
-MAX_X = 10
-MAX_Y = 10
+DEFAULT_MAX_X = 10
+DEFAULT_MAX_Y = 10
 
 
 def filter_correct_coordinates(f):
@@ -54,7 +54,7 @@ class Cell:
 
 class Matrix:
 
-    def __init__(self, max_x=MAX_X, max_y=MAX_Y):
+    def __init__(self, max_x=DEFAULT_MAX_X, max_y=DEFAULT_MAX_Y):
         self.max_x = max_x
         self.max_y = max_y
         self._field = [[Cell(i, j) for i in range(max_x)] for j in range(max_y)]
@@ -225,7 +225,7 @@ class SeaPlayground(_SeaPlaygroundShips, _SeaPlaygroundShoots):
 
 class ComputerPlayer:
 
-    def __init__(self, max_x=MAX_X, max_y=MAX_Y):
+    def __init__(self, max_x=DEFAULT_MAX_X, max_y=DEFAULT_MAX_Y):
         self.target_field = SeaField(max_x, max_y)
 
     def handle_shoot_answer(self, coord_x, coord_y, answer=Cell.MISSED):
