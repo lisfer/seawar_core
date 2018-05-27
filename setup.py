@@ -3,7 +3,7 @@ from os.path import join, dirname
 
 setup(
     name='seawar_skeleton',
-    version='1.2.1',
+    version='1.3.0',
     packages=find_packages(),
     long_description=open(join(dirname(__file__), 'README.md')).read(),
 )
