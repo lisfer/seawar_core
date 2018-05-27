@@ -5,6 +5,20 @@ from random import choice
 STANDARD_SHIP_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 
+def filter_correct_coordinates(f):
+    def decor(field, *args, **kwargs):
+        return [cell for cell in f(field, *args, **kwargs) if field.is_coord_correct(*cell)]
+    return decor
+
+
+def check_coordinates(f):
+    def decor(field, coord_x, coord_y, *args, **kwargs):
+        if field.is_coord_correct(coord_x, coord_y):
+            return f(field, coord_x, coord_y, *args, **kwargs)
+        raise IncorrectCoordinate(f'({coord_x}: {coord_y}) for Field({field.max_x}:{field.max_y})')
+    return decor
+
+
 class IncorrectCoordinate(Exception):
     pass
 
@@ -71,20 +85,6 @@ class Matrix:
             coord_x, coord_y = coord_x + step * (not is_vertical), coord_y + step * is_vertical
 
 
-def check_coordinates(f):
-    def decor(field, coord_x, coord_y, *args, **kwargs):
-        if field.is_coord_correct(coord_x, coord_y):
-            return f(field, coord_x, coord_y, *args, **kwargs)
-        raise IncorrectCoordinate(f'({coord_x}: {coord_y}) for Field({field.max_x}:{field.max_y})')
-    return decor
-
-
-def filter_correct_coordinates(f):
-    def decor(field, *args, **kwargs):
-        return [cell for cell in f(field, *args, **kwargs) if field.is_coord_correct(*cell)]
-    return decor
-
-
 class SeaField(Matrix):
 
     def is_cell_ship(self, coord_x, coord_y):
@@ -116,7 +116,7 @@ class SeaField(Matrix):
         return out
 
     @staticmethod
-    def _find_ship_vector(ship_cells):
+    def find_ship_vector(ship_cells):
         (x1, y1), (x2, y2) = map(min, zip(*ship_cells)), map(max, zip(*ship_cells))
         length = max(x2 - x1, y2 - y1)
         is_vertical = y1 + length == y2
@@ -198,7 +198,7 @@ class SeaPlayground:
     @staticmethod
     def _target_answer_mark_border(field, shooted_cells, answer):
         if answer == Cell.KILLED:
-            field.set_border(*field._find_ship_vector(shooted_cells))
+            field.set_border(*field.find_ship_vector(shooted_cells))
         elif answer == Cell.HIT:
             field.set_border(*shooted_cells[0])
 

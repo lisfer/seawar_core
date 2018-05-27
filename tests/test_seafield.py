@@ -179,8 +179,8 @@ class SeaPlaygroundTest(unittest.TestCase):
         assert SeaPlayground._is_ship_killed(base, 1, 3) is True
 
     def test_find_ship_vector(self):
-        assert SeaField._find_ship_vector([(1, 1), (2, 1), (3, 1)]) == (1, 1, 3, False)
-        assert SeaField._find_ship_vector([(1, 0), (1, 1), (1, 2), (1, 3)]) == (1, 0, 4, True)
+        assert SeaField.find_ship_vector([(1, 1), (2, 1), (3, 1)]) == (1, 1, 3, False)
+        assert SeaField.find_ship_vector([(1, 0), (1, 1), (1, 2), (1, 3)]) == (1, 0, 4, True)
 
     def test_answer_target_mark_border(self):
         base = SeaField(5, 5)
