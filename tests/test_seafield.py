@@ -63,18 +63,18 @@ class SeaPlaygroundTest(unittest.TestCase):
 
     def test_suitable_cell(self):
         base = SeaField(5, 5)
-        assert SeaPlayground.is_cell_suitable(base, 1, 1, 1)
-        assert SeaPlayground.is_cell_suitable(base, 1, 1, 3)
-        assert SeaPlayground.is_cell_suitable(base, 1, 1, 3, True)
+        assert base.is_cell_suitable(1, 1, 1)
+        assert base.is_cell_suitable(1, 1, 3)
+        assert base.is_cell_suitable(1, 1, 3, True)
 
-        assert not SeaPlayground.is_cell_suitable(base, -1, 1, 1)
-        assert not SeaPlayground.is_cell_suitable(base, 5, 1, 1)
-        assert not SeaPlayground.is_cell_suitable(base, 1, 1, 11)
+        assert not base.is_cell_suitable(-1, 1, 1)
+        assert not base.is_cell_suitable(5, 1, 1)
+        assert not base.is_cell_suitable(1, 1, 11)
 
         SeaPlayground.put_ship(base, 1, 1, 3)
 
-        assert not SeaPlayground.is_cell_suitable(base, 0, 0, 1)
-        assert not SeaPlayground.is_cell_suitable(base, 0, 2, 2, True)
+        assert not base.is_cell_suitable(0, 0, 1)
+        assert not base.is_cell_suitable(0, 2, 2, True)
 
     def test_incorrect_placement(self):
         base = SeaField(5, 5)
@@ -138,18 +138,18 @@ class SeaPlaygroundTest(unittest.TestCase):
     def test_find_ship(self):
         base = SeaField(5, 5)
         SeaPlayground.put_ship(base, 1, 1, 3)
-        ship = SeaPlayground._find_ship_cells(base, 2, 1)
+        ship = base.find_ship_by_cells(2, 1)
         assert set(ship) == {(1, 1), (2, 1), (3, 1)}
 
     def test_find_ship_vertical(self):
         base = SeaField(5, 5)
         SeaPlayground.put_ship(base, 1, 1, 3, True)
-        ship = SeaPlayground._find_ship_cells(base, 1, 2)
+        ship = base.find_ship_by_cells(1, 2)
         assert set(ship) == {(1, 1), (1, 2), (1, 3)}
 
     def test_find_abcent(self):
         base = SeaField(5, 5)
-        ship = SeaPlayground._find_ship_cells(base, 1, 2)
+        ship = base.find_ship_by_cells(1, 2)
         assert ship == []
 
     def test_is_killed_ship_alive(self):

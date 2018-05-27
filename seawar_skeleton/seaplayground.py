@@ -103,6 +103,18 @@ class SeaField(Matrix):
             cells = self._find_cell_corners(coord_x, coord_y)
         [self.set(value=Cell.BORDER, *cell) for cell in cells if self.is_cell_empty(*cell)]
 
+    def is_cell_suitable(self, coord_x, coord_y, length, is_vertical=False):
+        check = lambda x, y: self.is_coord_correct(x, y) and self.is_cell_empty(x, y)
+        return all(starmap(check, self.next_cell(coord_x, coord_y, is_vertical, length)))
+
+    def find_ship_by_cells(self, coord_x, coord_y):
+        out = [(coord_x, coord_y)] if self.is_cell_ship(coord_x, coord_y) else []
+        for step, is_vertical in product([-1, 1], [True, False]):
+            out.extend(takewhile(
+                lambda cell: (self.is_coord_correct(*cell) and self.is_cell_ship(*cell)),
+                self.next_cell(coord_x, coord_y, is_vertical, None, step)))
+        return out
+
     @staticmethod
     def _find_ship_vector(ship_cells):
         (x1, y1), (x2, y2) = map(min, zip(*ship_cells)), map(max, zip(*ship_cells))
@@ -133,22 +145,17 @@ class SeaPlayground:
     @staticmethod
     @check_coordinates
     def put_ship(field, coord_x, coord_y, length, is_vertical=False):
-        if SeaPlayground.is_cell_suitable(field, coord_x, coord_y, length, is_vertical):
+        if field.is_cell_suitable(coord_x, coord_y, length, is_vertical):
             field.set_ship(coord_x, coord_y, length, is_vertical)
             field.set_border(coord_x, coord_y, length, is_vertical)
         else:
             raise IncorrectShipPosition()
 
     @staticmethod
-    def is_cell_suitable(field, coord_x, coord_y, length, is_vertical=False):
-        check = lambda x, y: field.is_coord_correct(x, y) and field.is_cell_empty(x, y)
-        return all(starmap(check, field.next_cell(coord_x, coord_y, is_vertical, length)))
-
-    @staticmethod
     def get_suitable_cells(field, length):
         return [(x, y, is_vertical)
                 for (x, y), is_vertical in product(field.cells, (True, False))
-                if SeaPlayground.is_cell_suitable(field, x, y, length, is_vertical)]
+                if field.is_cell_suitable(x, y, length, is_vertical)]
 
     @staticmethod
     def _put_ship_random(field, length):
@@ -182,7 +189,7 @@ class SeaPlayground:
     def _target_answer_mark_cell(field, coord_x, coord_y, answer):
         field.set(coord_x, coord_y, answer)
         if answer is Cell.KILLED:
-            ship_cells = SeaPlayground._find_ship_cells(field, coord_x, coord_y)
+            ship_cells = field.find_ship_by_cells(coord_x, coord_y)
             [field.set(value=answer, *cell) for cell in ship_cells]
         else:
             ship_cells = [(coord_x, coord_y)]
@@ -196,17 +203,8 @@ class SeaPlayground:
             field.set_border(*shooted_cells[0])
 
     @staticmethod
-    def _find_ship_cells(field, coord_x, coord_y):
-        out = [(coord_x, coord_y)] if field.is_cell_ship(coord_x, coord_y) else []
-        for step, is_vertical in product([-1, 1], [True, False]):
-            out.extend(takewhile(
-                lambda cell: (field.is_coord_correct(*cell) and field.is_cell_ship(*cell)),
-                field.next_cell(coord_x, coord_y, is_vertical, None, step)))
-        return out
-
-    @staticmethod
     def _is_ship_killed(field, coord_x, coord_y):
-        return all([field.get(*cell) == Cell.HIT for cell in SeaPlayground._find_ship_cells(field, coord_x, coord_y)])
+        return all([field.get(*cell) == Cell.HIT for cell in field.find_ship_by_cells(coord_x, coord_y)])
 
 
 class ComputerPlayer:
