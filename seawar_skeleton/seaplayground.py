@@ -1,4 +1,4 @@
-from itertools import chain, product, takewhile
+from itertools import chain, product, takewhile, starmap
 from random import choice
 
 
@@ -117,7 +117,7 @@ class SeaPlayground:
     @staticmethod
     def is_cell_suitable(field, coord_x, coord_y, length, is_vertical=False):
         check = lambda x, y: field.is_coord_correct(x, y) and field.is_cell_empty(x, y)
-        return all([check(*cell) for cell in SeaField.next_cell(coord_x, coord_y, is_vertical, length)])
+        return all(starmap(check, SeaField.next_cell(coord_x, coord_y, is_vertical, length)))
 
     @staticmethod
     def get_suitable_cells(field, length):
@@ -232,5 +232,4 @@ class ComputerPlayer:
         x, y = ComputerPlayer.find_target(target_field)
         answer = SeaPlayground.income_shoot(enemy_field, x, y)
         ComputerPlayer.target_answer(target_field, x, y, answer)
-        print(x, y, answer)
         return x, y, answer
