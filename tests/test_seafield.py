@@ -109,24 +109,24 @@ class SeaPlaygroundTest(unittest.TestCase):
     def test_income_shoot(self):
         base = SeaField()
         SeaPlayground.put_ship(base, 2, 2, 3)
-        assert SeaPlayground.income_shoot(base, 3, 0) is Cell.MISSED
-        assert SeaPlayground.income_shoot(base, 3, 1) is Cell.MISSED
-        assert SeaPlayground.income_shoot(base, 3, 2) is Cell.HIT
-        assert SeaPlayground.income_shoot(base, 3, 3) is Cell.MISSED
-        assert SeaPlayground.income_shoot(base, 3, 4) is Cell.MISSED
+        assert SeaPlayground.income_shoot_to(base, 3, 0) is Cell.MISSED
+        assert SeaPlayground.income_shoot_to(base, 3, 1) is Cell.MISSED
+        assert SeaPlayground.income_shoot_to(base, 3, 2) is Cell.HIT
+        assert SeaPlayground.income_shoot_to(base, 3, 3) is Cell.MISSED
+        assert SeaPlayground.income_shoot_to(base, 3, 4) is Cell.MISSED
 
     def test_incorrect_income_shoot(self):
         base = SeaField()
         with self.assertRaises(IncorrectCoordinate):
-            SeaPlayground.income_shoot(base, -3, 0)
+            SeaPlayground.income_shoot_to(base, -3, 0)
         with self.assertRaises(IncorrectCoordinate):
-            SeaPlayground.income_shoot(base, 11, 0)
+            SeaPlayground.income_shoot_to(base, 11, 0)
 
     def test_target_anwer_mark_cell(self):
         base = SeaField(5, 5)
-        SeaPlayground._target_answer_mark_cell(base, 1, 1, Cell.MISSED)
-        SeaPlayground._target_answer_mark_cell(base, 2, 2, Cell.HIT)
-        SeaPlayground._target_answer_mark_cell(base, 3, 3, Cell.MISSED)
+        SeaPlayground._shoot_answer_mark_cell(base, 1, 1, Cell.MISSED)
+        SeaPlayground._shoot_answer_mark_cell(base, 2, 2, Cell.HIT)
+        SeaPlayground._shoot_answer_mark_cell(base, 3, 3, Cell.MISSED)
         for cell in base._cells:
             if (cell.x, cell.y) in ((1, 1), (3, 3)):
                 assert cell.value == Cell.MISSED
@@ -185,10 +185,10 @@ class SeaPlaygroundTest(unittest.TestCase):
     def test_answer_target_mark_border(self):
         base = SeaField(5, 5)
         base.set(2, 2, Cell.MISSED)
-        SeaPlayground._target_answer_mark_border(base, [(0, 0)], Cell.KILLED)
-        SeaPlayground._target_answer_mark_border(base, [(3, 3)], Cell.HIT)
-        SeaPlayground._target_answer_mark_border(base, [(0, 4)], Cell.MISSED)
-        SeaPlayground._target_answer_mark_border(base, [(4, 0)], Cell.MISSED)
+        SeaPlayground._shoot_answer_mark_border(base, [(0, 0)], Cell.KILLED)
+        SeaPlayground._shoot_answer_mark_border(base, [(3, 3)], Cell.HIT)
+        SeaPlayground._shoot_answer_mark_border(base, [(0, 4)], Cell.MISSED)
+        SeaPlayground._shoot_answer_mark_border(base, [(4, 0)], Cell.MISSED)
         for cell in base._cells:
             if (cell.x, cell.y) in ((0, 1), (1, 0), (1, 1),
                                     (2, 4), (4, 2), (4, 4)):
@@ -200,10 +200,10 @@ class SeaPlaygroundTest(unittest.TestCase):
 
     def test_answet_target(self):
         base = SeaField(4, 4)
-        SeaPlayground.target_answer(base, 0, 1, Cell.HIT)
-        SeaPlayground.target_answer(base, 1, 1, Cell.MISSED)
-        SeaPlayground.target_answer(base, 2, 1, Cell.MISSED)
-        SeaPlayground.target_answer(base, 3, 1, Cell.KILLED)
+        SeaPlayground.shoot_answer_from(base, 0, 1, Cell.HIT)
+        SeaPlayground.shoot_answer_from(base, 1, 1, Cell.MISSED)
+        SeaPlayground.shoot_answer_from(base, 2, 1, Cell.MISSED)
+        SeaPlayground.shoot_answer_from(base, 3, 1, Cell.KILLED)
         for cell in base._cells:
             if cell.x in (1, 2, 3) and cell.y in (0, 2):
                 assert cell.value == Cell.BORDER

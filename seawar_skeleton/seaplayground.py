@@ -174,19 +174,19 @@ class SeaPlayground:
 
     @staticmethod
     @check_coordinates
-    def income_shoot(field, coord_x, coord_y):
+    def income_shoot_to(field, coord_x, coord_y):
         result = Cell.HIT if field.is_cell_ship(coord_x, coord_y) else Cell.MISSED
         field.set(coord_x, coord_y, result)
         return result == Cell.HIT and SeaPlayground._is_ship_killed(field, coord_x, coord_y) and Cell.KILLED or result
 
     @staticmethod
     @check_coordinates
-    def target_answer(field, coord_x, coord_y, answer=Cell.MISSED):
-        shooted_cells = SeaPlayground._target_answer_mark_cell(field, coord_x, coord_y, answer)
-        SeaPlayground._target_answer_mark_border(field, shooted_cells, answer)
+    def shoot_answer_from(field, coord_x, coord_y, answer=Cell.MISSED):
+        shooted_cells = SeaPlayground._shoot_answer_mark_cell(field, coord_x, coord_y, answer)
+        SeaPlayground._shoot_answer_mark_border(field, shooted_cells, answer)
 
     @staticmethod
-    def _target_answer_mark_cell(field, coord_x, coord_y, answer):
+    def _shoot_answer_mark_cell(field, coord_x, coord_y, answer):
         field.set(coord_x, coord_y, answer)
         if answer is Cell.KILLED:
             ship_cells = field.find_ship_by_cells(coord_x, coord_y)
@@ -196,7 +196,7 @@ class SeaPlayground:
         return ship_cells
 
     @staticmethod
-    def _target_answer_mark_border(field, shooted_cells, answer):
+    def _shoot_answer_mark_border(field, shooted_cells, answer):
         if answer == Cell.KILLED:
             field.set_border(*field.find_ship_vector(shooted_cells))
         elif answer == Cell.HIT:
@@ -211,7 +211,7 @@ class ComputerPlayer:
 
     @staticmethod
     def target_answer(field, coord_x, coord_y, answer=Cell.MISSED):
-        SeaPlayground.target_answer(field, coord_x, coord_y, answer)
+        SeaPlayground.shoot_answer_from(field, coord_x, coord_y, answer)
         if answer is Cell.HIT:
             [field.set(value=Cell.PROBABLY_SHIP, *cell)
              for cell in field._find_cell_ribs(coord_x, coord_y)
@@ -227,6 +227,6 @@ class ComputerPlayer:
     @staticmethod
     def make_shoot(target_field, enemy_field):
         x, y = ComputerPlayer.find_target(target_field)
-        answer = SeaPlayground.income_shoot(enemy_field, x, y)
+        answer = SeaPlayground.income_shoot_to(enemy_field, x, y)
         ComputerPlayer.target_answer(target_field, x, y, answer)
         return x, y, answer
