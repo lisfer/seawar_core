@@ -93,6 +93,16 @@ class SeaField(Matrix):
     def is_cell_empty(self, coord_x, coord_y):
         return self.get(coord_x, coord_y) in (Cell.EMPTY, Cell.PROBABLY_SHIP)
 
+    def set_ship(self, coord_x, coord_y, length, is_vertical=False):
+        [self.set(value=Cell.SHIP, *cell) for cell in self.next_cell(coord_x, coord_y, is_vertical, length)]
+
+    def set_border(self, coord_x, coord_y, length=None, is_vertical=False):
+        if length:
+            cells = self._find_border_cells(coord_x, coord_y, length, is_vertical)
+        else:
+            cells = self._find_cell_corners(coord_x, coord_y)
+        [self.set(value=Cell.BORDER, *cell) for cell in cells if self.is_cell_empty(*cell)]
+
     @staticmethod
     def _find_ship_vector(ship_cells):
         (x1, y1), (x2, y2) = map(min, zip(*ship_cells)), map(max, zip(*ship_cells))
@@ -121,23 +131,11 @@ class SeaField(Matrix):
 class SeaPlayground:
 
     @staticmethod
-    def _set_ship(field, coord_x, coord_y, length, is_vertical=False):
-        [field.set(value=Cell.SHIP, *cell) for cell in field.next_cell(coord_x, coord_y, is_vertical, length)]
-
-    @staticmethod
-    def _set_border(field, coord_x, coord_y, length=None, is_vertical=False):
-        if length:
-            cells = field._find_border_cells(coord_x, coord_y, length, is_vertical)
-        else:
-            cells = field._find_cell_corners(coord_x, coord_y)
-        [field.set(value=Cell.BORDER, *cell) for cell in cells if field.is_cell_empty(*cell)]
-
-    @staticmethod
     @check_coordinates
     def put_ship(field, coord_x, coord_y, length, is_vertical=False):
         if SeaPlayground.is_cell_suitable(field, coord_x, coord_y, length, is_vertical):
-            SeaPlayground._set_ship(field, coord_x, coord_y, length, is_vertical)
-            SeaPlayground._set_border(field, coord_x, coord_y, length, is_vertical)
+            field.set_ship(coord_x, coord_y, length, is_vertical)
+            field.set_border(coord_x, coord_y, length, is_vertical)
         else:
             raise IncorrectShipPosition()
 
@@ -158,8 +156,8 @@ class SeaPlayground:
         if not cells:
             raise NoSpaceLeft()
         coord_x, coord_y, is_vertical = choice(cells)
-        SeaPlayground._set_ship(field, coord_x, coord_y, length, is_vertical)
-        SeaPlayground._set_border(field, coord_x, coord_y, length, is_vertical)
+        field.set_ship(coord_x, coord_y, length, is_vertical)
+        field.set_border(coord_x, coord_y, length, is_vertical)
 
     @staticmethod
     def put_ships_random(field, fleet:list=None):
@@ -193,9 +191,9 @@ class SeaPlayground:
     @staticmethod
     def _target_answer_mark_border(field, shooted_cells, answer):
         if answer == Cell.KILLED:
-            SeaPlayground._set_border(field, *field._find_ship_vector(shooted_cells))
+            field.set_border(*field._find_ship_vector(shooted_cells))
         elif answer == Cell.HIT:
-            SeaPlayground._set_border(field, *shooted_cells[0])
+            field.set_border(*shooted_cells[0])
 
     @staticmethod
     def _find_ship_cells(field, coord_x, coord_y):

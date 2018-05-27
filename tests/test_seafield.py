@@ -13,7 +13,7 @@ class SeaPlaygroundTest(unittest.TestCase):
 
     def test_set_ship(self):
         base = SeaField(5, 5)
-        SeaPlayground._set_ship(base, 1, 1, 3)
+        base.set_ship(1, 1, 3)
         ship = [(1, 1), (2, 1), (3, 1)]
         for cell in base._cells:
             if (cell.x, cell.y) in ship:
@@ -23,7 +23,7 @@ class SeaPlaygroundTest(unittest.TestCase):
 
     def test_set_border(self):
         base = SeaField(5, 5)
-        SeaPlayground._set_border(base, 1, 1, 3)
+        base.set_border(1, 1, 3)
         border = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0),
                   (0, 1), (4, 1),
                   (0, 2), (1, 2), (2, 2), (3, 2), (4, 2)]
@@ -35,8 +35,8 @@ class SeaPlaygroundTest(unittest.TestCase):
 
     def test_set_border_edge(self):
         base = SeaField(4, 4)
-        SeaPlayground._set_border(base, 0, 0, 2, True)
-        SeaPlayground._set_border(base, 2, 3, 2)
+        base.set_border(0, 0, 2, True)
+        base.set_border(2, 3, 2)
         border = [(1, 0), (1, 1), (0, 2), (1, 2),
                   (2, 2), (3, 2), (1, 3)]
         for cell in base._cells:
