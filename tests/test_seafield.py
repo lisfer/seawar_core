@@ -2,7 +2,7 @@ import unittest
 from itertools import chain
 
 from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField, \
-    IncorrectCoordinate, ComputerPlayer
+    IncorrectCoordinate, ComputerPlayer, Matrix
 
 
 class SeaPlaygroundTest(unittest.TestCase):
@@ -139,13 +139,13 @@ class SeaPlaygroundTest(unittest.TestCase):
         base = SeaField(5, 5)
         SeaPlayground.put_ship(base, 1, 1, 3)
         ship = SeaPlayground._find_ship_cells(base, 2, 1)
-        assert set(ship) == set([(1, 1), (2, 1), (3, 1)])
+        assert set(ship) == {(1, 1), (2, 1), (3, 1)}
 
     def test_find_ship_vertical(self):
         base = SeaField(5, 5)
         SeaPlayground.put_ship(base, 1, 1, 3, True)
         ship = SeaPlayground._find_ship_cells(base, 1, 2)
-        assert set(ship) == set([(1, 1), (1, 2), (1, 3)])
+        assert set(ship) == {(1, 1), (1, 2), (1, 3)}
 
     def test_find_abcent(self):
         base = SeaField(5, 5)
@@ -179,8 +179,8 @@ class SeaPlaygroundTest(unittest.TestCase):
         assert SeaPlayground._is_ship_killed(base, 1, 3) is True
 
     def test_find_ship_vector(self):
-        assert SeaPlayground._find_ship_vector([(1, 1), (2, 1), (3, 1)]) == (1, 1, 3, False)
-        assert SeaPlayground._find_ship_vector([(1, 0), (1, 1), (1, 2), (1, 3)]) == (1, 0, 4, True)
+        assert SeaField._find_ship_vector([(1, 1), (2, 1), (3, 1)]) == (1, 1, 3, False)
+        assert SeaField._find_ship_vector([(1, 0), (1, 1), (1, 2), (1, 3)]) == (1, 0, 4, True)
 
     def test_answer_target_mark_border(self):
         base = SeaField(5, 5)
@@ -218,8 +218,8 @@ class SeaPlaygroundTest(unittest.TestCase):
 
     def test_find_corners(self):
         base = SeaField(5, 5)
-        assert set(SeaPlayground._find_cell_corners(base, 3, 3)) == set([(2, 2), (4, 2), (2, 4), (4, 4)])
-        assert set(SeaPlayground._find_cell_corners(base, 0, 0)) == set([(1, 1)])
+        assert set(base._find_cell_corners(3, 3)) == {(2, 2), (4, 2), (2, 4), (4, 4)}
+        assert set(base._find_cell_corners(0, 0)) == {(1, 1)}
 
 
 class ComputerPlayerTest(unittest.TestCase):
