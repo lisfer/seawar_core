@@ -217,7 +217,7 @@ class SeaPlayground(_SeaPlaygroundShips, _SeaPlaygroundShoots):
 class ComputerPlayer:
 
     @staticmethod
-    def target_answer(field, coord_x, coord_y, answer=Cell.MISSED):
+    def shoot_answer_from(field, coord_x, coord_y, answer=Cell.MISSED):
         SeaPlayground.shoot_answer_from(field, coord_x, coord_y, answer)
         if answer is Cell.HIT:
             [field.set(value=Cell.PROBABLY_SHIP, *cell)
@@ -235,5 +235,5 @@ class ComputerPlayer:
     def make_shoot(target_field, enemy_field):
         x, y = ComputerPlayer.find_target(target_field)
         answer = SeaPlayground.income_shoot_to(enemy_field, x, y)
-        ComputerPlayer.target_answer(target_field, x, y, answer)
+        ComputerPlayer.shoot_answer_from(target_field, x, y, answer)
         return x, y, answer

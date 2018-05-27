@@ -231,15 +231,15 @@ class ComputerPlayerTest(unittest.TestCase):
 
     def test_target_answer_no_rate(self):
         base = SeaField(4, 4)
-        ComputerPlayer.target_answer(base, 0, 0, Cell.MISSED)
-        ComputerPlayer.target_answer(base, 2, 2, Cell.MISSED)
-        ComputerPlayer.target_answer(base, 2, 2, Cell.KILLED)
+        ComputerPlayer.shoot_answer_from(base, 0, 0, Cell.MISSED)
+        ComputerPlayer.shoot_answer_from(base, 2, 2, Cell.MISSED)
+        ComputerPlayer.shoot_answer_from(base, 2, 2, Cell.KILLED)
         assert len([cell for cell in base._cells if cell.value == Cell.PROBABLY_SHIP]) == 0
 
     def test_target_answer_rate(self):
         base = SeaField(5, 5)
-        ComputerPlayer.target_answer(base, 0, 0, Cell.HIT)
-        ComputerPlayer.target_answer(base, 2, 2, Cell.HIT)
+        ComputerPlayer.shoot_answer_from(base, 0, 0, Cell.HIT)
+        ComputerPlayer.shoot_answer_from(base, 2, 2, Cell.HIT)
         for cell in base._cells:
             if (cell.x, cell.y) in ((0, 1), (1, 0), (2, 1), (1, 2), (3, 2), (2, 3)):
                 assert cell.value is Cell.PROBABLY_SHIP
@@ -259,9 +259,9 @@ class ComputerPlayerTest(unittest.TestCase):
     def test_target_answer_clean_rate(self):
         base = SeaField(5, 5)
         probably_cells = lambda: [(cell.x, cell.y) for cell in base._cells if cell.value == Cell.PROBABLY_SHIP]
-        ComputerPlayer.target_answer(base, 2, 2, Cell.HIT)
+        ComputerPlayer.shoot_answer_from(base, 2, 2, Cell.HIT)
         assert set(probably_cells()) == set([(2, 1), (2, 3), (1, 2), (3, 2)])
-        ComputerPlayer.target_answer(base, 2, 2, Cell.KILLED)
+        ComputerPlayer.shoot_answer_from(base, 2, 2, Cell.KILLED)
         assert set(probably_cells()) == set()
 
     def test_make_shoots(self):
