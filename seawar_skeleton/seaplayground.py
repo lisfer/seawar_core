@@ -3,6 +3,8 @@ from random import choice
 
 
 STANDARD_SHIP_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
+MAX_X = 10
+MAX_Y = 10
 
 
 def filter_correct_coordinates(f):
@@ -52,7 +54,7 @@ class Cell:
 
 class Matrix:
 
-    def __init__(self, max_x=10, max_y=10):
+    def __init__(self, max_x=MAX_X, max_y=MAX_Y):
         self.max_x = max_x
         self.max_y = max_y
         self._field = [[Cell(i, j) for i in range(max_x)] for j in range(max_y)]
@@ -184,7 +186,7 @@ class _SeaPlaygroundShoots:
 
     @staticmethod
     @check_coordinates
-    def shoot_answer_from(field, coord_x, coord_y, answer=Cell.MISSED):
+    def handle_shoot_answer(field, coord_x, coord_y, answer=Cell.MISSED):
         shooted_cells = _SeaPlaygroundShoots._shoot_answer_mark_cell(field, coord_x, coord_y, answer)
         _SeaPlaygroundShoots._shoot_answer_mark_border(field, shooted_cells, answer)
 
@@ -209,6 +211,13 @@ class _SeaPlaygroundShoots:
     def _is_ship_killed(field, coord_x, coord_y):
         return all([field.get(*cell) == Cell.HIT for cell in field.find_ship_by_cells(coord_x, coord_y)])
 
+    @staticmethod
+    def make_shoot_by_computer(comp, enemy_field):
+        x, y = comp.select_target()
+        answer = SeaPlayground.income_shoot_to(enemy_field, x, y)
+        comp.handle_shoot_answer(x, y, answer)
+        return x, y, answer
+
 
 class SeaPlayground(_SeaPlaygroundShips, _SeaPlaygroundShoots):
     pass
@@ -216,24 +225,18 @@ class SeaPlayground(_SeaPlaygroundShips, _SeaPlaygroundShoots):
 
 class ComputerPlayer:
 
-    @staticmethod
-    def shoot_answer_from(field, coord_x, coord_y, answer=Cell.MISSED):
-        SeaPlayground.shoot_answer_from(field, coord_x, coord_y, answer)
+    def __init__(self, max_x=MAX_X, max_y=MAX_Y):
+        self.target_field = SeaField(max_x, max_y)
+
+    def handle_shoot_answer(self, coord_x, coord_y, answer=Cell.MISSED):
+        SeaPlayground.handle_shoot_answer(self.target_field, coord_x, coord_y, answer)
         if answer is Cell.HIT:
-            [field.set(value=Cell.PROBABLY_SHIP, *cell)
-             for cell in field._find_cell_ribs(coord_x, coord_y)
-             if field.is_cell_empty(*cell)]
+            [self.target_field.set(value=Cell.PROBABLY_SHIP, *cell)
+             for cell in self.target_field._find_cell_ribs(coord_x, coord_y)
+             if self.target_field.is_cell_empty(*cell)]
 
-    @staticmethod
-    def find_target(field):
-        cells = [cell for cell in field.cells if field.get(*cell) == Cell.PROBABLY_SHIP]
+    def select_target(self):
+        cells = [cell for cell in self.target_field.cells if self.target_field.get(*cell) == Cell.PROBABLY_SHIP]
         if not cells:
-            cells = [cell for cell in field.cells if field.is_cell_empty(*cell)]
+            cells = [cell for cell in self.target_field.cells if self.target_field.is_cell_empty(*cell)]
         return choice(cells)
-
-    @staticmethod
-    def make_shoot(target_field, enemy_field):
-        x, y = ComputerPlayer.find_target(target_field)
-        answer = SeaPlayground.income_shoot_to(enemy_field, x, y)
-        ComputerPlayer.shoot_answer_from(target_field, x, y, answer)
-        return x, y, answer

@@ -200,10 +200,10 @@ class SeaPlaygroundTest(unittest.TestCase):
 
     def test_answet_target(self):
         base = SeaField(4, 4)
-        SeaPlayground.shoot_answer_from(base, 0, 1, Cell.HIT)
-        SeaPlayground.shoot_answer_from(base, 1, 1, Cell.MISSED)
-        SeaPlayground.shoot_answer_from(base, 2, 1, Cell.MISSED)
-        SeaPlayground.shoot_answer_from(base, 3, 1, Cell.KILLED)
+        SeaPlayground.handle_shoot_answer(base, 0, 1, Cell.HIT)
+        SeaPlayground.handle_shoot_answer(base, 1, 1, Cell.MISSED)
+        SeaPlayground.handle_shoot_answer(base, 2, 1, Cell.MISSED)
+        SeaPlayground.handle_shoot_answer(base, 3, 1, Cell.KILLED)
         for cell in base._cells:
             if cell.x in (1, 2, 3) and cell.y in (0, 2):
                 assert cell.value == Cell.BORDER
@@ -225,22 +225,22 @@ class SeaPlaygroundTest(unittest.TestCase):
 class ComputerPlayerTest(unittest.TestCase):
 
     def test_find_target(self):
-        base = SeaField(2, 2)
-        list(map(base.set, (0, 0, 1), (0, 1, 0), (1, 1, 1)))
-        assert ComputerPlayer.find_target(base) == (1, 1)
+        comp = ComputerPlayer(2, 2)
+        list(map(comp.target_field.set, (0, 0, 1), (0, 1, 0), (1, 1, 1)))
+        assert comp.select_target() == (1, 1)
 
     def test_target_answer_no_rate(self):
-        base = SeaField(4, 4)
-        ComputerPlayer.shoot_answer_from(base, 0, 0, Cell.MISSED)
-        ComputerPlayer.shoot_answer_from(base, 2, 2, Cell.MISSED)
-        ComputerPlayer.shoot_answer_from(base, 2, 2, Cell.KILLED)
-        assert len([cell for cell in base._cells if cell.value == Cell.PROBABLY_SHIP]) == 0
+        comp = ComputerPlayer(4, 4)
+        comp.handle_shoot_answer(0, 0, Cell.MISSED)
+        comp.handle_shoot_answer(2, 2, Cell.MISSED)
+        comp.handle_shoot_answer(2, 2, Cell.KILLED)
+        assert len([cell for cell in comp.target_field._cells if cell.value == Cell.PROBABLY_SHIP]) == 0
 
     def test_target_answer_rate(self):
-        base = SeaField(5, 5)
-        ComputerPlayer.shoot_answer_from(base, 0, 0, Cell.HIT)
-        ComputerPlayer.shoot_answer_from(base, 2, 2, Cell.HIT)
-        for cell in base._cells:
+        comp = ComputerPlayer(5, 5)
+        comp.handle_shoot_answer(0, 0, Cell.HIT)
+        comp.handle_shoot_answer(2, 2, Cell.HIT)
+        for cell in comp.target_field._cells:
             if (cell.x, cell.y) in ((0, 1), (1, 0), (2, 1), (1, 2), (3, 2), (2, 3)):
                 assert cell.value is Cell.PROBABLY_SHIP
             elif (cell.x, cell.y) in ((0, 0), (2, 2)):
@@ -251,29 +251,29 @@ class ComputerPlayerTest(unittest.TestCase):
                 assert cell.value is Cell.EMPTY
 
     def test_find_target(self):
-        base = SeaField()
-        base.set(5, 5, Cell.PROBABLY_SHIP)
+        comp = ComputerPlayer()
+        comp.target_field.set(5, 5, Cell.PROBABLY_SHIP)
         for i in range(10):
-            assert ComputerPlayer.find_target(base) == (5, 5)
+            assert comp.select_target() == (5, 5)
 
     def test_target_answer_clean_rate(self):
-        base = SeaField(5, 5)
-        probably_cells = lambda: [(cell.x, cell.y) for cell in base._cells if cell.value == Cell.PROBABLY_SHIP]
-        ComputerPlayer.shoot_answer_from(base, 2, 2, Cell.HIT)
+        comp = ComputerPlayer(5, 5)
+        probably_cells = lambda: [(cell.x, cell.y) for cell in comp.target_field._cells if cell.value == Cell.PROBABLY_SHIP]
+        comp.handle_shoot_answer(2, 2, Cell.HIT)
         assert set(probably_cells()) == set([(2, 1), (2, 3), (1, 2), (3, 2)])
-        ComputerPlayer.shoot_answer_from(base, 2, 2, Cell.KILLED)
+        comp.handle_shoot_answer(2, 2, Cell.KILLED)
         assert set(probably_cells()) == set()
 
     def test_make_shoots(self):
         enemy_field = SeaField(5, 5)
-        target_field = SeaField(5, 5)
+        comp = ComputerPlayer(5, 5)
 
         SeaPlayground.put_ship(enemy_field, 1, 3, 3)
-        target_field.set(0, 3, Cell.MISSED)
-        target_field.set(1, 2, Cell.MISSED)
-        target_field.set(1, 4, Cell.MISSED)
-        target_field.set(1, 3, Cell.PROBABLY_SHIP)
+        comp.target_field.set(0, 3, Cell.MISSED)
+        comp.target_field.set(1, 2, Cell.MISSED)
+        comp.target_field.set(1, 4, Cell.MISSED)
+        comp.target_field.set(1, 3, Cell.PROBABLY_SHIP)
 
-        assert ComputerPlayer.make_shoot(target_field, enemy_field) == (1, 3, Cell.HIT)
-        assert ComputerPlayer.make_shoot(target_field, enemy_field) == (2, 3, Cell.HIT)
-        assert ComputerPlayer.make_shoot(target_field, enemy_field) == (3, 3, Cell.KILLED)
+        assert SeaPlayground.make_shoot_by_computer(comp, enemy_field) == (1, 3, Cell.HIT)
+        assert SeaPlayground.make_shoot_by_computer(comp, enemy_field) == (2, 3, Cell.HIT)
+        assert SeaPlayground.make_shoot_by_computer(comp, enemy_field) == (3, 3, Cell.KILLED)
