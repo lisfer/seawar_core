@@ -7,6 +7,13 @@ DEFAULT_MAX_X = 10
 DEFAULT_MAX_Y = 10
 
 
+class SIGNALS:
+    WIN = 5
+    KILLED = 4
+    HITTING = 3
+    MISS = 2
+
+
 def filter_correct_coordinates(f):
     def decor(field, *args, **kwargs):
         return [cell for cell in f(field, *args, **kwargs) if field.is_coord_correct(*cell)]
@@ -34,12 +41,10 @@ class NoSpaceLeft(Exception):
 
 
 class Cell:
-
     EMPTY = 0
     BORDER = 1
     SHIP = 10
     HIT = -10
-    KILLED = -20
     MISSED = -1
     PROBABLY_SHIP = 5
 
@@ -90,7 +95,7 @@ class Matrix:
 class SeaField(Matrix):
 
     def is_cell_ship(self, coord_x, coord_y):
-        return self.get(coord_x, coord_y) in (Cell.SHIP, Cell.HIT, Cell.KILLED)
+        return self.get(coord_x, coord_y) in (Cell.SHIP, Cell.HIT)
 
     def is_cell_empty(self, coord_x, coord_y):
         return self.get(coord_x, coord_y) in (Cell.EMPTY, Cell.PROBABLY_SHIP)
@@ -110,12 +115,15 @@ class SeaField(Matrix):
         return all(starmap(check, self.next_cell(coord_x, coord_y, is_vertical, length)))
 
     def find_ship_by_cells(self, coord_x, coord_y):
-        out = [(coord_x, coord_y)] if self.is_cell_ship(coord_x, coord_y) else []
+        out = []
         for step, is_vertical in product([-1, 1], [True, False]):
             out.extend(takewhile(
                 lambda cell: (self.is_coord_correct(*cell) and self.is_cell_ship(*cell)),
                 self.next_cell(coord_x, coord_y, is_vertical, None, step)))
-        return out
+        return set(out)
+
+    def has_any_alive_ship(self):
+        return any([cell for cell in self._cells if cell.value is Cell.SHIP])
 
     @staticmethod
     def find_ship_vector(ship_cells):
@@ -179,44 +187,43 @@ class _SeaPlaygroundShoots:
 
     @staticmethod
     @check_coordinates
-    def income_shoot_to(field, coord_x, coord_y):
-        result = Cell.HIT if field.is_cell_ship(coord_x, coord_y) else Cell.MISSED
-        field.set(coord_x, coord_y, result)
-        return result == Cell.HIT and _SeaPlaygroundShoots._is_ship_killed(field, coord_x, coord_y) and Cell.KILLED or result
+    def income_shoot_to(field, *coord):
+        signal, cell_mark = (SIGNALS.HITTING, Cell.HIT) if field.is_cell_ship(*coord) else (SIGNALS.MISS, Cell.MISSED)
+        field.set(*coord, cell_mark)
+        killed_cells = (signal is SIGNALS.HITTING) and list(_SeaPlaygroundShoots._get_killed_ship(field, *coord)) or []
+        signal = (SIGNALS.WIN if not field.has_any_alive_ship() else SIGNALS.KILLED) if killed_cells else signal
+        return dict(signal=signal, cells=(killed_cells or [coord]))
 
     @staticmethod
-    @check_coordinates
-    def handle_shoot_answer(field, coord_x, coord_y, answer=Cell.MISSED):
-        shooted_cells = _SeaPlaygroundShoots._shoot_answer_mark_cell(field, coord_x, coord_y, answer)
-        _SeaPlaygroundShoots._shoot_answer_mark_border(field, shooted_cells, answer)
+    def handle_shoot_answer(field, signal, cells):
+        if not all(starmap(field.is_coord_correct, cells)):
+            raise IncorrectCoordinate(f'{cells} for Field({field.max_x}:{field.max_y})')
+        _SeaPlaygroundShoots._shoot_answer_mark_cell(field, signal, cells)
+        _SeaPlaygroundShoots._shoot_answer_mark_border(field, signal, cells)
 
     @staticmethod
-    def _shoot_answer_mark_cell(field, coord_x, coord_y, answer):
-        field.set(coord_x, coord_y, answer)
-        if answer is Cell.KILLED:
-            ship_cells = field.find_ship_by_cells(coord_x, coord_y)
-            [field.set(value=answer, *cell) for cell in ship_cells]
-        else:
-            ship_cells = [(coord_x, coord_y)]
-        return ship_cells
+    def _shoot_answer_mark_cell(field, signal, cells):
+        answer = Cell.HIT if signal in (SIGNALS.HITTING, SIGNALS.KILLED, SIGNALS.WIN) else Cell.MISSED
+        [field.set(value=answer, *cell) for cell in cells]
 
     @staticmethod
-    def _shoot_answer_mark_border(field, shooted_cells, answer):
-        if answer == Cell.KILLED:
-            field.set_border(*field.find_ship_vector(shooted_cells))
-        elif answer == Cell.HIT:
-            field.set_border(*shooted_cells[0])
+    def _shoot_answer_mark_border(field, signal, cells):
+        if signal == SIGNALS.KILLED:
+            field.set_border(*field.find_ship_vector(cells))
+        elif signal == SIGNALS.HITTING:
+            field.set_border(*cells[0])
 
     @staticmethod
-    def _is_ship_killed(field, coord_x, coord_y):
-        return all([field.get(*cell) == Cell.HIT for cell in field.find_ship_by_cells(coord_x, coord_y)])
+    def _get_killed_ship(field, coord_x, coord_y):
+        ship_cells = field.find_ship_by_cells(coord_x, coord_y)
+        return ship_cells if all([field.get(*cell) == Cell.HIT for cell in ship_cells]) else []
 
     @staticmethod
     def make_shoot_by_computer(comp, enemy_field):
         x, y = comp.select_target()
         answer = SeaPlayground.income_shoot_to(enemy_field, x, y)
-        comp.handle_shoot_answer(x, y, answer)
-        return x, y, answer
+        comp.handle_shoot_answer(**answer)
+        return answer
 
 
 class SeaPlayground(_SeaPlaygroundShips, _SeaPlaygroundShoots):
@@ -228,12 +235,13 @@ class ComputerPlayer:
     def __init__(self, max_x=DEFAULT_MAX_X, max_y=DEFAULT_MAX_Y):
         self.target_field = SeaField(max_x, max_y)
 
-    def handle_shoot_answer(self, coord_x, coord_y, answer=Cell.MISSED):
-        SeaPlayground.handle_shoot_answer(self.target_field, coord_x, coord_y, answer)
-        if answer is Cell.HIT:
-            [self.target_field.set(value=Cell.PROBABLY_SHIP, *cell)
-             for cell in self.target_field._find_cell_ribs(coord_x, coord_y)
-             if self.target_field.is_cell_empty(*cell)]
+    def handle_shoot_answer(self, signal, cells):
+        SeaPlayground.handle_shoot_answer(self.target_field,  signal, cells)
+        if signal is SIGNALS.HITTING:
+            for answer_cell in cells:
+                [self.target_field.set(value=Cell.PROBABLY_SHIP, *cl)
+                 for cl in self.target_field._find_cell_ribs(*answer_cell)
+                 if self.target_field.is_cell_empty(*cl)]
 
     def select_target(self):
         cells = [cell for cell in self.target_field.cells if self.target_field.get(*cell) == Cell.PROBABLY_SHIP]
