@@ -5,6 +5,21 @@ from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosi
     IncorrectCoordinate, ComputerPlayer, Matrix
 
 
+
+class SeaFieldTest(unittest.TestCase):
+
+    def test_has_any_alive_ship(self):
+        base = SeaField(5, 5)
+        base.set_ship(1, 1, 2)
+        assert base.has_any_alive_ship() is True
+        base.set(0, 1, Cell.HIT)
+        assert base.has_any_alive_ship() is True
+        base.set(1, 1, Cell.HIT)
+        assert base.has_any_alive_ship() is True
+        base.set(2, 1, Cell.HIT)
+        assert base.has_any_alive_ship() is False
+
+
 class SeaPlaygroundTest(unittest.TestCase):
 
     def test_create(self):

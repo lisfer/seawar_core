@@ -115,7 +115,10 @@ class SeaField(Matrix):
             out.extend(takewhile(
                 lambda cell: (self.is_coord_correct(*cell) and self.is_cell_ship(*cell)),
                 self.next_cell(coord_x, coord_y, is_vertical, None, step)))
-        return out
+        return set(out)
+
+    def has_any_alive_ship(self):
+        return any([cell for cell in self._cells if cell.value is Cell.SHIP])
 
     @staticmethod
     def find_ship_vector(ship_cells):
