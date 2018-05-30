@@ -100,21 +100,21 @@ class SeaPlayGroundShipsTest(unittest.TestCase):
         assert len([cell for cell in base.cells if cell.value == SEA_CELLS.SHIP]) == 20
 
 
-class SeaFieldTest():
+class SeaFieldTest(unittest.TestCase):
 
     def test_create(self):
         base = SeaField()
-        assert len(base._cells) == 100
+        assert len(base.cells) == 100
 
     def test_set_ship(self):
         base = SeaField(5, 5)
         base.set_ship(1, 1, 3)
         ship = [(1, 1), (2, 1), (3, 1)]
-        for cell in base._cells:
+        for cell in base.cells:
             if (cell.x, cell.y) in ship:
-                assert cell.value == Cell.SHIP
+                assert cell.value == SEA_CELLS.SHIP
             else:
-                assert cell.value == Cell.EMPTY
+                assert cell.value == SEA_CELLS.EMPTY
 
     def test_set_border(self):
         base = SeaField(5, 5)
@@ -122,11 +122,11 @@ class SeaFieldTest():
         border = [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0),
                   (0, 1), (4, 1),
                   (0, 2), (1, 2), (2, 2), (3, 2), (4, 2)]
-        for cell in base._cells:
+        for cell in base.cells:
             if (cell.x, cell.y) in border:
-                assert cell.value == Cell.BORDER
+                assert cell.value == SEA_CELLS.BORDER
             else:
-                assert cell.value == Cell.EMPTY
+                assert cell.value == SEA_CELLS.EMPTY
 
     def test_set_border_edge(self):
         base = SeaField(4, 4)
@@ -134,11 +134,11 @@ class SeaFieldTest():
         base.set_border(2, 3, 2)
         border = [(1, 0), (1, 1), (0, 2), (1, 2),
                   (2, 2), (3, 2), (1, 3)]
-        for cell in base._cells:
+        for cell in base.cells:
             if (cell.x, cell.y) in border:
-                assert cell.value == Cell.BORDER
+                assert cell.value == SEA_CELLS.BORDER
             else:
-                assert cell.value == Cell.EMPTY
+                assert cell.value == SEA_CELLS.EMPTY
 
     def test_suitable_cell(self):
         base = SeaField(5, 5)
@@ -167,7 +167,7 @@ class SeaFieldTest():
         assert base.has_any_alive_ship() is False
 
 
-class SeaPlaygroundTest1():
+class SeaPlaygroundShootTest():
 
     def test_income_shoot(self):
         base = SeaField()

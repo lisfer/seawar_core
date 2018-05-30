@@ -98,9 +98,6 @@ class SeaField(Matrix):
     def set(self, coord_x, coord_y, value):
         self._field[coord_y][coord_x].value = value
 
-    def shoot(self, coord_x, coord_y):
-        return self.get(coord_x, coord_y).shoot()
-
     def is_cell_ship(self, coord_x, coord_y):
         return self.get(coord_x, coord_y).value == SEA_CELLS.SHIP
 
@@ -130,7 +127,7 @@ class SeaField(Matrix):
         return set(out)
 
     def has_any_alive_ship(self):
-        return any([cell for cell in self._cells if cell.value is SEA_CELLS.SHIP and not cell.is_shooted])
+        return any([cell for cell in self.cells if cell.value is SEA_CELLS.SHIP and not cell.is_shooted])
 
     @staticmethod
     def find_ship_vector(ship_cells):
@@ -194,7 +191,7 @@ class SeaPlaygroundShips:
 
 
 
-class _SeaPlaygroundShoots:
+class SeaPlaygroundShoots:
 
     @staticmethod
     @check_coordinates
@@ -210,8 +207,8 @@ class _SeaPlaygroundShoots:
     def handle_shoot_answer(field, signal, cells):
         if not all(starmap(field.is_coord_correct, cells)):
             raise IncorrectCoordinate(f'{cells} for Field({field.max_x}:{field.max_y})')
-        _SeaPlaygroundShoots._shoot_answer_mark_cell(field, signal, cells)
-        _SeaPlaygroundShoots._shoot_answer_mark_border(field, signal, cells)
+        SeaPlaygroundShoots._shoot_answer_mark_cell(field, signal, cells)
+        SeaPlaygroundShoots._shoot_answer_mark_border(field, signal, cells)
 
     @staticmethod
     def _shoot_answer_mark_cell(field, signal, cells):
@@ -238,7 +235,7 @@ class _SeaPlaygroundShoots:
         return answer
 
 
-class SeaPlayground(SeaPlaygroundShips, _SeaPlaygroundShoots):
+class SeaPlayground(SeaPlaygroundShips, SeaPlaygroundShoots):
     pass
 
 
