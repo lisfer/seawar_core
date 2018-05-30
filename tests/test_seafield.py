@@ -8,7 +8,6 @@ from seawar_skeleton.seaplayground import SeaPlaygroundShips, SeaPlayground, Sea
     IncorrectCoordinate, Matrix, SeaPlaygroundShoots, TargetField
 from seawar_skeleton import SIGNALS, SEA_CELLS
 
-# TODO: replace asserts to self.assert
 
 class CellTest(unittest.TestCase):
     
@@ -46,13 +45,13 @@ class MatrixTest(unittest.TestCase):
         self.assertEqual(cell, [(2, 2), (3, 2)])
         
     def test_find_ship_vector(self):
-        assert Matrix.find_vector([(1, 1), (2, 1), (3, 1)]) == (1, 1, 3, False)
-        assert Matrix.find_vector([(1, 0), (1, 1), (1, 2), (1, 3)]) == (1, 0, 4, True)
+        self.assertEqual(Matrix.find_vector([(1, 1), (2, 1), (3, 1)]), (1, 1, 3, False))
+        self.assertEqual(Matrix.find_vector([(1, 0), (1, 1), (1, 2), (1, 3)]), (1, 0, 4, True))
 
     def test_find_corners(self):
         m = Matrix(5, 5)
-        assert set(m.find_cell_corners(3, 3)) == {(2, 2), (4, 2), (2, 4), (4, 4)}
-        assert set(m.find_cell_corners(0, 0)) == {(1, 1)}
+        self.assertEqual(set(m.find_cell_corners(3, 3)), {(2, 2), (4, 2), (2, 4), (4, 4)})
+        self.assertEqual(set(m.find_cell_corners(0, 0)), {(1, 1)})
 
 
 class SeaPlayGroundShipsTest(unittest.TestCase):
@@ -109,14 +108,14 @@ class SeaPlayGroundShipsTest(unittest.TestCase):
     def test_put_random_many(self):
         base = SeaField()
         SeaPlaygroundShips.put_ships_random(base)
-        assert len([cell for cell in base.cells if cell.value == SEA_CELLS.SHIP]) == 20
+        self.assertEqual(len([cell for cell in base.cells if cell.value == SEA_CELLS.SHIP]), 20)
 
 
 class SeaFieldTest(unittest.TestCase):
 
     def test_create(self):
         base = SeaField()
-        assert len(base.cells) == 100
+        self.assertEqual(len(base.cells), 100)
 
     def test_set_ship(self):
         base = SeaField(5, 5)
@@ -124,9 +123,9 @@ class SeaFieldTest(unittest.TestCase):
         ship = [(1, 1), (2, 1), (3, 1)]
         for cell in base.cells:
             if (cell.x, cell.y) in ship:
-                assert cell.value == SEA_CELLS.SHIP
+                self.assertEqual(cell.value, SEA_CELLS.SHIP)
             else:
-                assert cell.value == SEA_CELLS.EMPTY
+                self.assertEqual(cell.value, SEA_CELLS.EMPTY)
 
     def test_set_border(self):
         base = SeaField(5, 5)
@@ -136,9 +135,9 @@ class SeaFieldTest(unittest.TestCase):
                   (0, 2), (1, 2), (2, 2), (3, 2), (4, 2)]
         for cell in base.cells:
             if (cell.x, cell.y) in border:
-                assert cell.value == SEA_CELLS.BORDER
+                self.assertEqual(cell.value, SEA_CELLS.BORDER)
             else:
-                assert cell.value == SEA_CELLS.EMPTY
+                self.assertEqual(cell.value, SEA_CELLS.EMPTY)
 
     def test_set_border_edge(self):
         base = SeaField(4, 4)
@@ -148,49 +147,49 @@ class SeaFieldTest(unittest.TestCase):
                   (2, 2), (3, 2), (1, 3)]
         for cell in base.cells:
             if (cell.x, cell.y) in border:
-                assert cell.value == SEA_CELLS.BORDER
+                self.assertEqual(cell.value, SEA_CELLS.BORDER)
             else:
-                assert cell.value == SEA_CELLS.EMPTY
+                self.assertEqual(cell.value, SEA_CELLS.EMPTY)
 
     def test_suitable_cell(self):
         base = SeaField(5, 5)
-        assert base.is_cell_suitable(1, 1, 1)
-        assert base.is_cell_suitable(1, 1, 3)
-        assert base.is_cell_suitable(1, 1, 3, True)
+        self.assertTrue(base.is_cell_suitable(1, 1, 1))
+        self.assertTrue(base.is_cell_suitable(1, 1, 3))
+        self.assertTrue(base.is_cell_suitable(1, 1, 3, True))
 
-        assert not base.is_cell_suitable(-1, 1, 1)
-        assert not base.is_cell_suitable(5, 1, 1)
-        assert not base.is_cell_suitable(1, 1, 11)
+        self.assertFalse(base.is_cell_suitable(-1, 1, 1))
+        self.assertFalse(base.is_cell_suitable(5, 1, 1))
+        self.assertFalse(base.is_cell_suitable(1, 1, 11))
 
         SeaPlayground.put_ship(base, 1, 1, 3)
 
-        assert not base.is_cell_suitable(0, 0, 1)
-        assert not base.is_cell_suitable(0, 2, 2, True)
+        self.assertFalse(base.is_cell_suitable(0, 0, 1))
+        self.assertFalse(base.is_cell_suitable(0, 2, 2, True))
 
     def test_find_ship(self):
         base = SeaField(5, 5)
         SeaPlayground.put_ship(base, 1, 1, 3)
-        assert base.find_ship_by_cells(2, 1) == {(1, 1), (2, 1), (3, 1)}
+        self.assertEqual(base.find_ship_by_cells(2, 1), {(1, 1), (2, 1), (3, 1)})
 
     def test_find_ship_vertical(self):
         base = SeaField(5, 5)
         SeaPlayground.put_ship(base, 1, 1, 3, True)
-        assert base.find_ship_by_cells(1, 2) == {(1, 1), (1, 2), (1, 3)}
+        self.assertEqual(base.find_ship_by_cells(1, 2), {(1, 1), (1, 2), (1, 3)})
 
     def test_find_abcent(self):
         base = SeaField(5, 5)
-        assert base.find_ship_by_cells(1, 2) == set()
+        self.assertEqual(base.find_ship_by_cells(1, 2), set())
 
     def test_has_any_alive_ship(self):
         base = SeaField(5, 5)
         base.set_ship(1, 1, 2)
-        assert base.has_any_alive_ship() is True
+        self.assertTrue(base.has_any_alive_ship())
         base.get(0, 1).shoot()
-        assert base.has_any_alive_ship() is True
+        self.assertTrue(base.has_any_alive_ship())
         base.get(1, 1).shoot()
-        assert base.has_any_alive_ship() is True
+        self.assertTrue(base.has_any_alive_ship())
         base.get(2, 1).shoot()
-        assert base.has_any_alive_ship() is False
+        self.assertFalse(base.has_any_alive_ship())
 
 
 class TargetFieldTest(unittest.TestCase):
@@ -198,13 +197,13 @@ class TargetFieldTest(unittest.TestCase):
     def test_find_target(self):
         base = TargetField(2, 2)
         list(starmap(base.set, [(0, 0, 1), (0, 1, 1), (1, 0, 1)]))
-        assert base.select_target() == (1, 1)
+        self.assertEqual(base.select_target(), (1, 1))
 
     def test_find_target_preferred(self):
         base = TargetField()
         base.set(5, 5, TARGET_CELLS.PROBABLY_SHIP)
         for i in range(10):
-            assert base.select_target() == (5, 5)
+            self.assertEqual(base.select_target(), (5, 5))
 
 
 class SeaPlaygroundShootTest(unittest.TestCase):

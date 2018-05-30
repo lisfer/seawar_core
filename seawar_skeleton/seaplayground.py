@@ -64,12 +64,10 @@ class SeaFieldCell(Cell):
 
 class Matrix:
 
-    CELL_CLASS = Cell
-
     def __init__(self, max_x=DEFAULT_MAX_X, max_y=DEFAULT_MAX_Y):
         self.max_x = max_x
         self.max_y = max_y
-        self._field = [[self.__class__.CELL_CLASS(i, j) for i in range(max_x)] for j in range(max_y)]
+        self._field = [[Cell(i, j) for i in range(max_x)] for j in range(max_y)]
 
     def __repr__(self):
         return '<Matrix (max_x={}; max_y={})>'.format(self.max_x, self.max_y)

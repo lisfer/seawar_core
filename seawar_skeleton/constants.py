@@ -10,6 +10,7 @@ SEA_CELLS = create_constant('SEA_CELLS', ['EMPTY', 'BORDER', 'SHIP'])
 TARGET_CELLS = create_constant('TARGET_CELLS', ['EMPTY', 'MISS', 'HIT', 'BORDER', 'PROBABLY_SHIP'])
 
 
+
 STANDARD_SHIP_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 DEFAULT_MAX_X = 10
 DEFAULT_MAX_Y = 10
