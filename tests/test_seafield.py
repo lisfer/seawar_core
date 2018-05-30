@@ -1,7 +1,8 @@
 import unittest
-from itertools import chain, starmap
+from itertools import chain, starmap, takewhile
 
-from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField, \
+from seawar_skeleton.constants import TARGET_CELLS
+from seawar_skeleton.seaplayground import SeaPlaygroundShips, SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField, \
     IncorrectCoordinate, ComputerPlayer, Matrix
 from seawar_skeleton import SIGNALS, SEA_CELLS
 
@@ -19,23 +20,87 @@ class CellTest(unittest.TestCase):
         self.assertFalse(c.is_shooted)
         self.assertTrue(c.shoot())
         self.assertTrue(c.is_shooted)
+        
+        
+class MatrixTest(unittest.TestCase):
+    
+    def test_coord_correct(self):
+        m = Matrix(5, 5)
+        self.assertTrue(m.is_coord_correct(0, 0))
+        self.assertTrue(m.is_coord_correct(0, 4))
+        self.assertTrue(m.is_coord_correct(4, 0))
+        self.assertFalse(m.is_coord_correct(-1, 0))
+        self.assertFalse(m.is_coord_correct(1, 5))
+        
+    def test_next_cell_length(self):
+        cells = [cell for cell in Matrix.next_cell(1, 1, True, 3)]
+        self.assertEqual(cells, [(1, 1), (1, 2), (1, 3)])
+        cells = [cell for cell in Matrix.next_cell(4, 4, False, 3, -1)]
+        self.assertEqual(cells, [(4, 4), (3, 4), (2, 4)])
+
+    def test_next_cell_length(self):
+        cell = [*takewhile(lambda c: c[0] < 4, Matrix.next_cell(2, 2, False))]
+        self.assertEqual(cell, [(2, 2), (3, 2)])
 
 
-class SeaFieldTest(unittest.TestCase):
-
-    def test_has_any_alive_ship(self):
+class SeaPlayGroundShipsTest(unittest.TestCase):
+    
+    def test_put_ship(self):
         base = SeaField(5, 5)
-        base.set_ship(1, 1, 2)
-        assert base.has_any_alive_ship() is True
-        base.set(0, 1, Cell.HIT)
-        assert base.has_any_alive_ship() is True
-        base.set(1, 1, Cell.HIT)
-        assert base.has_any_alive_ship() is True
-        base.set(2, 1, Cell.HIT)
-        assert base.has_any_alive_ship() is False
+        SeaPlaygroundShips.put_ship(base, 2, 1, 3, True)
+        ship = [(2, 1), (2, 2), (2, 3)]
+        border = [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4),
+                  (2, 0), (2, 4),
+                  (3, 0), (3, 1), (3, 2), (3, 3), (3, 4)]
+
+        for cell in base.cells:
+            if (cell.x, cell.y) in ship:
+                self.assertEqual(cell.value, SEA_CELLS.SHIP)
+            elif (cell.x, cell.y) in border:
+                self.assertEqual(cell.value, SEA_CELLS.BORDER)
+            else:
+                self.assertEqual(cell.value, SEA_CELLS.EMPTY)
+
+    def test_incorrect_placement(self):
+        base = SeaField(5, 5)
+        SeaPlaygroundShips.put_ship(base, 1, 1, 3)
+        with self.assertRaises(IncorrectCoordinate):
+            SeaPlaygroundShips.put_ship(base, -1, 2, 2, True)
+        with self.assertRaises(IncorrectShipPosition):
+            SeaPlaygroundShips.put_ship(base, 0, 2, 2, True)
+
+    def test_get_suitable_cells(self):
+        base = SeaField(3, 3)
+        SeaPlaygroundShips.put_ship(base, 0, 0, 1)
+
+        self.assertEqual(
+            set(SeaPlaygroundShips.get_suitable_cells(base, 3)),
+            {(2, 0, True), (0, 2, False)})
+
+        self.assertEqual(
+            set(SeaPlaygroundShips.get_suitable_cells(base, 2)),
+            {(2, 0, True), (2, 1, True), (0, 2, False), (1, 2, False)})
+
+        self.assertEqual(
+            set(SeaPlayground.get_suitable_cells(base, 1)),
+            {(2, 0, True), (2, 0, False), (2, 1, True), (2, 1, False),
+             (0, 2, True), (0, 2, False), (1, 2, True), (1, 2, False),
+             (2, 2, True), (2, 2, False)})
+
+    def test_put_random_ship(self):
+        base = SeaField(4, 4)
+        SeaPlaygroundShips._put_ship_random(base, 3)
+        with self.assertRaises(NoSpaceLeft):
+            SeaPlaygroundShips._put_ship_random(base, 3)
+            SeaPlaygroundShips._put_ship_random(base, 3)
+
+    def test_put_random_many(self):
+        base = SeaField()
+        SeaPlaygroundShips.put_ships_random(base)
+        assert len([cell for cell in base.cells if cell.value == SEA_CELLS.SHIP]) == 20
 
 
-class SeaPlaygroundTest(unittest.TestCase):
+class SeaFieldTest():
 
     def test_create(self):
         base = SeaField()
@@ -75,22 +140,6 @@ class SeaPlaygroundTest(unittest.TestCase):
             else:
                 assert cell.value == Cell.EMPTY
 
-    def test_put_ship(self):
-        base = SeaField(5, 5)
-        SeaPlayground.put_ship(base, 2, 1, 3, True)
-        ship = [(2, 1), (2, 2), (2, 3)]
-        border = [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4),
-                  (2, 0), (2, 4),
-                  (3, 0), (3, 1), (3, 2), (3, 3), (3, 4)]
-
-        for cell in base._cells:
-            if (cell.x, cell.y) in ship:
-                assert cell.value == Cell.SHIP
-            elif (cell.x, cell.y) in border:
-                assert cell.value == Cell.BORDER
-            else:
-                assert cell.value == Cell.EMPTY
-
     def test_suitable_cell(self):
         base = SeaField(5, 5)
         assert base.is_cell_suitable(1, 1, 1)
@@ -105,36 +154,20 @@ class SeaPlaygroundTest(unittest.TestCase):
 
         assert not base.is_cell_suitable(0, 0, 1)
         assert not base.is_cell_suitable(0, 2, 2, True)
-
-    def test_incorrect_placement(self):
+        
+    def test_has_any_alive_ship(self):
         base = SeaField(5, 5)
-        SeaPlayground.put_ship(base, 1, 1, 3)
-        with self.assertRaises(IncorrectCoordinate):
-            SeaPlayground.put_ship(base, -1, 2, 2, True)
-        with self.assertRaises(IncorrectShipPosition):
-            SeaPlayground.put_ship(base, 0, 2, 2, True)
+        base.set_ship(1, 1, 2)
+        assert base.has_any_alive_ship() is True
+        base.get(0, 1).shoot()
+        assert base.has_any_alive_ship() is True
+        base.get(1, 1).shoot()
+        assert base.has_any_alive_ship() is True
+        base.get(2, 1).shoot()
+        assert base.has_any_alive_ship() is False
 
-    def test_get_suitable_cells(self):
-        base = SeaField(3, 3)
-        SeaPlayground.put_ship(base, 0, 0, 1)
-        assert SeaPlayground.get_suitable_cells(base, 3) == [(2, 0, True), (0, 2, False)]
-        assert SeaPlayground.get_suitable_cells(base, 2) == [(2, 0, True), (2, 1, True), (0, 2, False), (1, 2, False)]
 
-        assert SeaPlayground.get_suitable_cells(base, 1) == [(2, 0, True), (2, 0, False), (2, 1, True), (2, 1, False),
-                                                             (0, 2, True), (0, 2, False), (1, 2, True), (1, 2, False),
-                                                             (2, 2, True), (2, 2, False)]
-
-    def test_put_random_ship(self):
-        base = SeaField(4, 4)
-        SeaPlayground._put_ship_random(base, 3)
-        with self.assertRaises(NoSpaceLeft):
-            SeaPlayground._put_ship_random(base, 3)
-            SeaPlayground._put_ship_random(base, 3)
-
-    def test_put_random_many(self):
-        base = SeaField()
-        SeaPlayground.put_ships_random(base)
-        assert len([cell for cell in base._cells if cell.value == Cell.SHIP]) == 20
+class SeaPlaygroundTest1():
 
     def test_income_shoot(self):
         base = SeaField()
@@ -211,9 +244,9 @@ class SeaPlaygroundTest(unittest.TestCase):
 
     def test_answer_target_mark_border(self):
         base = SeaField(5, 5)
-        base.set(2, 2, Cell.MISSED)
+        base.set(2, 2, TARGET_CELLS.MISS)
         SeaPlayground._shoot_answer_mark_border(base, SIGNALS.KILLED, [(0, 0)])
-        SeaPlayground._shoot_answer_mark_border(base, SIGNALS.HITTING, [(3, 3)])
+        SeaPlayground._shoot_answer_mark_border(base, SIGNALS.HIT, [(3, 3)])
         SeaPlayground._shoot_answer_mark_border(base, SIGNALS.MISS, [(0, 4)])
         SeaPlayground._shoot_answer_mark_border(base, SIGNALS.MISS, [(4, 0)])
         for cell in base._cells:
@@ -228,11 +261,11 @@ class SeaPlaygroundTest(unittest.TestCase):
     def test_answer_target_incorrect_cell(self):
         base = SeaField(4, 4)
         with self.assertRaises(IncorrectCoordinate):
-            SeaPlayground.handle_shoot_answer(base, SIGNALS.HITTING, [(-1, 0)])
+            SeaPlayground.handle_shoot_answer(base, SIGNALS.HIT, [(-1, 0)])
         with self.assertRaises(IncorrectCoordinate):
-            SeaPlayground.handle_shoot_answer(base, SIGNALS.HITTING, [(1, 11110)])
+            SeaPlayground.handle_shoot_answer(base, SIGNALS.HIT, [(1, 11110)])
         with self.assertRaises(IncorrectCoordinate):
-            SeaPlayground.handle_shoot_answer(base, SIGNALS.HITTING, [(i, i) for i in range(10)])
+            SeaPlayground.handle_shoot_answer(base, SIGNALS.HIT, [(i, i) for i in range(10)])
 
     def test_answet_target(self):
         base = SeaField(4, 4)
@@ -256,7 +289,7 @@ class SeaPlaygroundTest(unittest.TestCase):
         assert set(base._find_cell_corners(0, 0)) == {(1, 1)}
 
 
-class ComputerPlayerTest(unittest.TestCase):
+class ComputerPlayerTest1():
 
     def test_find_target(self):
         comp = ComputerPlayer(2, 2)
