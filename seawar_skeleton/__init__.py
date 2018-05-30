@@ -1,3 +1,3 @@
 from .seaplayground import IncorrectShipPosition, NoSpaceLeft, IncorrectCoordinate, \
-    Cell, Matrix, SeaField, SeaPlayground, ComputerPlayer
+    SeaFieldCell, Matrix, SeaField, SeaPlayground
 from seawar_skeleton.constants import SIGNALS, SEA_CELLS, STANDARD_SHIP_FLEET

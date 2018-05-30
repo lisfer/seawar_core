@@ -7,7 +7,7 @@ def create_constant(name:str, values:list) -> namedtuple:
 
 SIGNALS = create_constant('SIGNALS', ['WIN', 'KILLED', 'HIT', 'MISS'])
 SEA_CELLS = create_constant('SEA_CELLS', ['EMPTY', 'BORDER', 'SHIP'])
-TARGET_CELLS = create_constant('TARGET_CELLS', ['MISS', 'HIT', 'BORDER', 'PROBABLY_SHIP'])
+TARGET_CELLS = create_constant('TARGET_CELLS', ['EMPTY', 'MISS', 'HIT', 'BORDER', 'PROBABLY_SHIP'])
 
 
 STANDARD_SHIP_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
