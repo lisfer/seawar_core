@@ -1,17 +1,8 @@
 from itertools import chain, product, takewhile, starmap
 from random import choice
 
-
-STANDARD_SHIP_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
-DEFAULT_MAX_X = 10
-DEFAULT_MAX_Y = 10
-
-
-class SIGNALS:
-    WIN = 5
-    KILLED = 4
-    HITTING = 3
-    MISS = 2
+from seawar_skeleton.constants import DEFAULT_MAX_X, DEFAULT_MAX_Y, SEA_CELLS, SIGNALS, STANDARD_SHIP_FLEET, \
+    TARGET_CELLS
 
 
 def filter_correct_coordinates(f):
@@ -41,20 +32,19 @@ class NoSpaceLeft(Exception):
 
 
 class Cell:
-    EMPTY = 0
-    BORDER = 1
-    SHIP = 10
-    HIT = -10
-    MISSED = -1
-    PROBABLY_SHIP = 5
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, value=SEA_CELLS.EMPTY):
         self.x = x
         self.y = y
-        self.value = Cell.EMPTY
+        self.value = value
+        self.is_shooted = False
 
     def __repr__(self):
-        return f'<Cell: ({self.x}; {self.y} = {self.value})>'
+        return f"<Cell: ({self.x}; {self.y}) = ([{'x' if self.is_shooted else ' '}]{self.value};)>"
+
+    def shoot(self):
+        self.is_shooted = True
+        return self.value == SEA_CELLS.SHIP
 
 
 class Matrix:
@@ -95,20 +85,20 @@ class Matrix:
 class SeaField(Matrix):
 
     def is_cell_ship(self, coord_x, coord_y):
-        return self.get(coord_x, coord_y) in (Cell.SHIP, Cell.HIT)
+        return self.get(coord_x, coord_y) == SEA_CELLS.SHIP
 
     def is_cell_empty(self, coord_x, coord_y):
-        return self.get(coord_x, coord_y) in (Cell.EMPTY, Cell.PROBABLY_SHIP)
+        return self.get(coord_x, coord_y) == SEA_CELLS.EMPTY
 
     def set_ship(self, coord_x, coord_y, length, is_vertical=False):
-        [self.set(value=Cell.SHIP, *cell) for cell in self.next_cell(coord_x, coord_y, is_vertical, length)]
+        [self.set(value=SEA_CELLS.SHIP, *cell) for cell in self.next_cell(coord_x, coord_y, is_vertical, length)]
 
     def set_border(self, coord_x, coord_y, length=None, is_vertical=False):
         if length:
             cells = self._find_border_cells(coord_x, coord_y, length, is_vertical)
         else:
             cells = self._find_cell_corners(coord_x, coord_y)
-        [self.set(value=Cell.BORDER, *cell) for cell in cells if self.is_cell_empty(*cell)]
+        [self.set(value=SEA_CELLS.BORDER, *cell) for cell in cells if self.is_cell_empty(*cell)]
 
     def is_cell_suitable(self, coord_x, coord_y, length, is_vertical=False):
         check = lambda x, y: self.is_coord_correct(x, y) and self.is_cell_empty(x, y)
@@ -123,7 +113,7 @@ class SeaField(Matrix):
         return set(out)
 
     def has_any_alive_ship(self):
-        return any([cell for cell in self._cells if cell.value is Cell.SHIP])
+        return any([cell for cell in self._cells if cell.value is SEA_CELLS.SHIP])
 
     @staticmethod
     def find_ship_vector(ship_cells):
@@ -185,14 +175,18 @@ class _SeaPlaygroundShips:
 
 class _SeaPlaygroundShoots:
 
+    def shoot(self, cell):
+        cell.shooted = True
+
     @staticmethod
     @check_coordinates
     def income_shoot_to(field, *coord):
-        signal, cell_mark = (SIGNALS.HITTING, Cell.HIT) if field.is_cell_ship(*coord) else (SIGNALS.MISS, Cell.MISSED)
-        field.set(*coord, cell_mark)
-        killed_cells = (signal is SIGNALS.HITTING) and list(_SeaPlaygroundShoots._get_killed_ship(field, *coord)) or []
-        signal = (SIGNALS.WIN if not field.has_any_alive_ship() else SIGNALS.KILLED) if killed_cells else signal
-        return dict(signal=signal, cells=(killed_cells or [coord]))
+        return field.get(*coord).shoot()
+        # signal = SIGNALS.HITTING if field.is_cell_ship(*coord) else SIGNALS.MISS
+        #
+        # killed_cells = (signal is SIGNALS.HITTING) and list(_SeaPlaygroundShoots._get_killed_ship(field, *coord)) or []
+        # signal = (SIGNALS.WIN if not field.has_any_alive_ship() else SIGNALS.KILLED) if killed_cells else signal
+        # return dict(signal=signal, cells=(killed_cells or [coord]))
 
     @staticmethod
     def handle_shoot_answer(field, signal, cells):
@@ -203,7 +197,7 @@ class _SeaPlaygroundShoots:
 
     @staticmethod
     def _shoot_answer_mark_cell(field, signal, cells):
-        answer = Cell.HIT if signal in (SIGNALS.HITTING, SIGNALS.KILLED, SIGNALS.WIN) else Cell.MISSED
+        answer = SEA_CELLS.HIT if signal in (SIGNALS.HITTING, SIGNALS.KILLED, SIGNALS.WIN) else Cell.MISSED
         [field.set(value=answer, *cell) for cell in cells]
 
     @staticmethod
@@ -239,12 +233,12 @@ class ComputerPlayer:
         SeaPlayground.handle_shoot_answer(self.target_field,  signal, cells)
         if signal is SIGNALS.HITTING:
             for answer_cell in cells:
-                [self.target_field.set(value=Cell.PROBABLY_SHIP, *cl)
+                [self.target_field.set(value=TARGET_CELLS.PROBABLY_SHIP, *cl)
                  for cl in self.target_field._find_cell_ribs(*answer_cell)
                  if self.target_field.is_cell_empty(*cl)]
 
     def select_target(self):
-        cells = [cell for cell in self.target_field.cells if self.target_field.get(*cell) == Cell.PROBABLY_SHIP]
+        cells = [cell for cell in self.target_field.cells if self.target_field.get(*cell) == TARGET_CELLS.PROBABLY_SHIP]
         if not cells:
             cells = [cell for cell in self.target_field.cells if self.target_field.is_cell_empty(*cell)]
         return choice(cells)

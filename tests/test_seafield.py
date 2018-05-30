@@ -2,7 +2,23 @@ import unittest
 from itertools import chain, starmap
 
 from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField, \
-    IncorrectCoordinate, ComputerPlayer, Matrix, SIGNALS
+    IncorrectCoordinate, ComputerPlayer, Matrix
+from seawar_skeleton import SIGNALS, SEA_CELLS
+
+
+class CellTest(unittest.TestCase):
+    
+    def test_shoot_miss(self):
+        c = Cell(4, 4)
+        self.assertFalse(c.is_shooted)
+        self.assertFalse(c.shoot())
+        self.assertTrue(c.is_shooted)
+        
+    def test_shoot_hit(self):
+        c = Cell(4, 4, SEA_CELLS.SHIP)
+        self.assertFalse(c.is_shooted)
+        self.assertTrue(c.shoot())
+        self.assertTrue(c.is_shooted)
 
 
 class SeaFieldTest(unittest.TestCase):
