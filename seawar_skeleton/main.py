@@ -1,40 +1,89 @@
-class Cell:
+from functools import partial
+from itertools import product, chain
+from random import choice
 
-    def __init__(self, x, y, value=None):
-        pass
+
+def get_cell_class(values, default=None):
+
+    class Cell:
+
+        def is_value(self, value):
+            return self.value == value
+
+        def mark_value(self, value):
+            self.value = value
+
+        def default_value(self):
+            return None
+
+        def __init__(self, x, y, value=None):
+            self.x = x
+            self.y = y
+            self.value = value or self.default_value()
+
+    for v in values:
+        setattr(Cell, f'is_{v}', property(lambda s, v=v: s.is_value(value=v)))
+        setattr(Cell, f'mark_{v}', (lambda s, v=v: s.mark_value(value=v)))
+        setattr(Cell, 'default_value', (lambda s: default or values[0] or None))
+    return Cell
 
 
 class Matrix:
-    
-    def cells_by_vektor(self, coord_x, coord_y, length, is_vertical=False):
+
+    @staticmethod
+    def coords_by_vektor(coord_x, coord_y, length, is_vertical=False):
+        return [(coord_x + i * (not is_vertical), coord_y + i * is_vertical)
+                for i in range(length)]
+
+    @staticmethod
+    def borders_by_vektor(coord_x, coord_y, length, is_vertical=False):
         pass
-    
-    def borders_by_vektor(self, coord_x, coord_y, length, is_vertical=False):
+
+    @staticmethod
+    def ribs_for_coord(coord_x, coord_y):
         pass
-    
-    def ribs_for_cell(self, coord_x, coord_y):
+
+    @staticmethod
+    def conrers_for_coord(coord_x, coord_y):
         pass
-    
-    def conrers_for_cell(self, coord_x, coord_y):
+
+    @staticmethod
+    def vektor_by_coords(cells):
         pass
-    
-    def vektor_by_cells(self, cells):
-        pass
+
+    @staticmethod
+    def is_coord_correct(x, y, max_x, max_y):
+        return (0 <= x < max_x) and (0 <= y < max_y)
 
 
 class Field:
 
     def __init__(self, max_x, max_y):
-        pass
+        self.max_x = max_x
+        self.max_y = max_y
+        Cell = get_cell_class(['empty', 'ship', 'border'])
+        self._field = [[Cell(x, y) for x in range(max_x)] for y in range(max_y)]
+
+    @property
+    def cell(self):
+        return chain(*self._field)
+
+    def is_coord_correct(self, x, y):
+        return Matrix.is_coord_correct(x, y, self.max_x, self.max_y)
+
+    def get(self, x, y):
+        return self._field[y][x]
     
-    def draw_ship(self, cells):
-        pass
+    def draw_ship(self, coords):
+        [self.get(*coord).mark_ship() for coord in coords]
     
-    def draw_border(self, cells):
-        pass
-    
-    def is_suitable(self, cells):
-        pass
+    def draw_border(self, coords):
+        [self.get(*coord).mark_border() for coord in coords]
+
+    def is_suitable_vektor(self, coord_x, coord_y, length, is_vertical=False):
+        coords = Matrix.coords_by_vektor(coord_x, coord_y, length, is_vertical)
+        _check = lambda x, y: self.is_coord_correct(x, y) and self.get(x, y).is_empty
+        return coords and all([_check(*coord) for coord in coords])
     
 
 class ShipService:
@@ -45,14 +94,21 @@ class ShipService:
     def get_ship_if_killed(self, coord_x, coord_y):
         pass
 
-    def get_available_coord(self, coord_x, coord_y, length):
-        pass
+    @staticmethod
+    def get_available_vectors(field, length) -> 'list(tuple(x, y, length, is_vert))':
+        return [(cell.x, cell.y, length, is_vertical)
+                for cell, is_vertical in product(field.cells, (True, False))
+                if field.is_suitable_vektor(cell.x, cell.y, length, is_vertical)]
 
-    def put_ship(self, coord_x, coord_y, length, is_vertical=False):
-        pass
+    @staticmethod
+    def put_ship(field, coord_x, coord_y, length, is_vertical=False):
+        field.draw_ship(Matrix.coords_by_vektor(coord_x, coord_y, length, is_vertical))
+        field.draw_border(Matrix.borders_by_vektor(coord_x, coord_y, length, is_vertical))
 
-    def put_ship_random(self, coord_x, coord_y, length):
-        pass
+    @staticmethod
+    def put_ship_random(field, length):
+        cells = ShipService.get_available_vectors(field, length)
+        ShipService.put_ship(*choice(cells))
 
     def put_ships_random(self, fleet):
         pass
