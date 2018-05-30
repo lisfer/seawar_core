@@ -109,7 +109,7 @@ class SeaField(Matrix):
 
     def set_border(self, coord_x, coord_y, length=None, is_vertical=False):
         if length:
-            cells = self._find_border_cells(coord_x, coord_y, length, is_vertical)
+            cells = self.find_border_cells(coord_x, coord_y, length, is_vertical)
         else:
             cells = self._find_cell_corners(coord_x, coord_y)
         [self.set(value=SEA_CELLS.BORDER, *cell) for cell in cells if self.is_cell_empty(*cell)]
@@ -137,7 +137,7 @@ class SeaField(Matrix):
         return x1, y1, length + 1, is_vertical
 
     @filter_correct_coordinates
-    def _find_border_cells(self, coord_x, coord_y, length, is_vertical=False):
+    def find_border_cells(self, coord_x, coord_y, length, is_vertical=False):
         v_length, h_length = (length, 1) if is_vertical else (1, length)
         return (list(Matrix.next_cell(coord_x - 1, coord_y - 1, True, v_length + 2)) +
                 list(Matrix.next_cell(coord_x + h_length, coord_y - 1, True, v_length + 2)) +
@@ -186,22 +186,28 @@ class SeaPlaygroundShips:
             SeaPlaygroundShips._put_ship_random(field, length)
 
 
-
-
-
-
-
 class SeaPlaygroundShoots:
 
     @staticmethod
     @check_coordinates
     def income_shoot_to(field, *coord):
-        return field.shoot(*coord)
+        return field.get(*coord).shoot()
         # signal = SIGNALS.HITTING if field.is_cell_ship(*coord) else SIGNALS.MISS
         #
         # killed_cells = (signal is SIGNALS.HITTING) and list(_SeaPlaygroundShoots._get_killed_ship(field, *coord)) or []
         # signal = (SIGNALS.WIN if not field.has_any_alive_ship() else SIGNALS.KILLED) if killed_cells else signal
         # return dict(signal=signal, cells=(killed_cells or [coord]))
+
+    @staticmethod
+    @check_coordinates
+    def get_killed_ship(field, coord_x, coord_y):
+        ship_coords = field.find_ship_by_cells(coord_x, coord_y)
+        ship_cells = list(starmap(field.get, ship_coords))
+        out = {}
+        if ship_cells and all([cell.value == SEA_CELLS.SHIP and cell.is_shooted for cell in ship_cells]):
+            out['ship'] = ship_cells
+            out['border'] = list(starmap(field.get, field.find_border_cells(*field.find_ship_vector(ship_coords))))
+        return out
 
     @staticmethod
     def handle_shoot_answer(field, signal, cells):
@@ -219,13 +225,9 @@ class SeaPlaygroundShoots:
     def _shoot_answer_mark_border(field, signal, cells):
         if signal == SIGNALS.KILLED:
             field.set_border(*field.find_ship_vector(cells))
-        elif signal == SIGNALS.HITTING:
+        elif signal == SIGNALS.HIT:
             field.set_border(*cells[0])
 
-    @staticmethod
-    def _get_killed_ship(field, coord_x, coord_y):
-        ship_cells = field.find_ship_by_cells(coord_x, coord_y)
-        return ship_cells if all([field.get(*cell) == Cell.HIT for cell in ship_cells]) else []
 
     @staticmethod
     def make_shoot_by_computer(comp, enemy_field):

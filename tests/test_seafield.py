@@ -2,8 +2,9 @@ import unittest
 from itertools import chain, starmap, takewhile
 
 from seawar_skeleton.constants import TARGET_CELLS
-from seawar_skeleton.seaplayground import SeaPlaygroundShips, SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField, \
-    IncorrectCoordinate, ComputerPlayer, Matrix
+from seawar_skeleton.seaplayground import SeaPlaygroundShips, SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, \
+    SeaField, \
+    IncorrectCoordinate, ComputerPlayer, Matrix, SeaPlaygroundShoots
 from seawar_skeleton import SIGNALS, SEA_CELLS
 
 
@@ -154,7 +155,30 @@ class SeaFieldTest(unittest.TestCase):
 
         assert not base.is_cell_suitable(0, 0, 1)
         assert not base.is_cell_suitable(0, 2, 2, True)
-        
+
+    def test_find_ship(self):
+        base = SeaField(5, 5)
+        SeaPlayground.put_ship(base, 1, 1, 3)
+        assert base.find_ship_by_cells(2, 1) == {(1, 1), (2, 1), (3, 1)}
+
+    def test_find_ship_vertical(self):
+        base = SeaField(5, 5)
+        SeaPlayground.put_ship(base, 1, 1, 3, True)
+        assert base.find_ship_by_cells(1, 2) == {(1, 1), (1, 2), (1, 3)}
+
+    def test_find_abcent(self):
+        base = SeaField(5, 5)
+        assert base.find_ship_by_cells(1, 2) == set()
+
+    def test_find_ship_vector(self):
+        assert SeaField.find_ship_vector([(1, 1), (2, 1), (3, 1)]) == (1, 1, 3, False)
+        assert SeaField.find_ship_vector([(1, 0), (1, 1), (1, 2), (1, 3)]) == (1, 0, 4, True)
+
+    def test_find_corners(self):
+        base = SeaField(5, 5)
+        assert set(base._find_cell_corners(3, 3)) == {(2, 2), (4, 2), (2, 4), (4, 4)}
+        assert set(base._find_cell_corners(0, 0)) == {(1, 1)}
+
     def test_has_any_alive_ship(self):
         base = SeaField(5, 5)
         base.set_ship(1, 1, 2)
@@ -167,16 +191,37 @@ class SeaFieldTest(unittest.TestCase):
         assert base.has_any_alive_ship() is False
 
 
-class SeaPlaygroundShootTest():
+class SeaPlaygroundShootTest(unittest.TestCase):
 
-    def test_income_shoot(self):
-        base = SeaField()
-        SeaPlayground.put_ship(base, 2, 2, 3)
-        assert SeaPlayground.income_shoot_to(base, 3, 0) == dict(signal=SIGNALS.MISS, cells=[(3, 0)])
-        assert SeaPlayground.income_shoot_to(base, 3, 1) == dict(signal=SIGNALS.MISS, cells=[(3, 1)])
-        assert SeaPlayground.income_shoot_to(base, 3, 2) == dict(signal=SIGNALS.HITTING, cells=[(3, 2)])
-        assert SeaPlayground.income_shoot_to(base, 3, 3) == dict(signal=SIGNALS.MISS, cells=[(3, 3)])
-        assert SeaPlayground.income_shoot_to(base, 3, 4) == dict(signal=SIGNALS.MISS, cells=[(3, 4)])
+    def test_is_killed_ship_alive(self):
+        base = SeaField(5, 5)
+        base.set(1, 2, SEA_CELLS.SHIP)
+        base.set(1, 3, SEA_CELLS.SHIP)
+        base.set(1, 4, SEA_CELLS.SHIP)
+        self.assertEqual(SeaPlaygroundShoots.get_killed_ship(base, 1, 3), {})
+
+    def test_is_killed_ship_injured(self):
+        base = SeaField(5, 5)
+        base.set(1, 2, SEA_CELLS.SHIP)
+        base.set(1, 3, SEA_CELLS.SHIP)
+        base.set(1, 4, SEA_CELLS.SHIP)
+        base.get(1, 2).shoot()
+        base.get(1, 3).shoot()
+        self.assertEqual(SeaPlayground.get_killed_ship(base, 1, 3), {})
+
+    def test_is_killed_ship_killed(self):
+        base = SeaField(5, 5)
+        ship_cells = (0, 0), (0, 1), (0, 2)
+        for x, y in ship_cells:
+            base.set(x, y, SEA_CELLS.SHIP)
+            base.get(x, y).shoot()
+
+        resp = SeaPlayground.get_killed_ship(base, 0, 1)
+        for cell in resp['ship']:
+            self.assertIn((cell.x, cell.y), ((0, 0), (0, 1), (0, 2)))
+        for cell in resp['border']:
+            self.assertIn((cell.x, cell.y), ((1, 0), (1, 1), (1, 2), (1, 3), (0, 3)))
+
 
     def test_incorrect_income_shoot(self):
         base = SeaField()
@@ -198,49 +243,10 @@ class SeaPlaygroundShootTest():
             else:
                 assert cell.value == Cell.EMPTY
 
-    def test_find_ship(self):
-        base = SeaField(5, 5)
-        SeaPlayground.put_ship(base, 1, 1, 3)
-        assert base.find_ship_by_cells(2, 1) == {(1, 1), (2, 1), (3, 1)}
 
-    def test_find_ship_vertical(self):
-        base = SeaField(5, 5)
-        SeaPlayground.put_ship(base, 1, 1, 3, True)
-        assert base.find_ship_by_cells(1, 2) == {(1, 1), (1, 2), (1, 3)}
 
-    def test_find_abcent(self):
-        base = SeaField(5, 5)
-        assert base.find_ship_by_cells(1, 2) == set()
 
-    def test_is_killed_ship_alive(self):
-        base = SeaField(5, 5)
-        base.set(1, 2, Cell.SHIP)
-        base.set(1, 3, Cell.SHIP)
-        base.set(1, 4, Cell.SHIP)
-        assert SeaPlayground._get_killed_ship(base, 1, 3) == []
 
-    def test_is_killed_ship_injured(self):
-        base = SeaField(5, 5)
-        base.set(1, 2, Cell.HIT)
-        base.set(1, 3, Cell.HIT)
-        base.set(1, 4, Cell.SHIP)
-        assert SeaPlayground._get_killed_ship(base, 1, 3) == []
-
-        base.set(1, 2, Cell.HIT)
-        base.set(1, 3, Cell.SHIP)
-        base.set(1, 4, Cell.HIT)
-        assert SeaPlayground._get_killed_ship(base, 1, 3) == []
-
-    def test_is_killed_ship_killed(self):
-        base = SeaField(5, 5)
-        base.set(1, 2, Cell.HIT)
-        base.set(1, 3, Cell.HIT)
-        base.set(1, 4, Cell.HIT)
-        assert SeaPlayground._get_killed_ship(base, 1, 3) == {(1, 2), (1, 3), (1, 4)}
-
-    def test_find_ship_vector(self):
-        assert SeaField.find_ship_vector([(1, 1), (2, 1), (3, 1)]) == (1, 1, 3, False)
-        assert SeaField.find_ship_vector([(1, 0), (1, 1), (1, 2), (1, 3)]) == (1, 0, 4, True)
 
     def test_answer_target_mark_border(self):
         base = SeaField(5, 5)
@@ -249,7 +255,7 @@ class SeaPlaygroundShootTest():
         SeaPlayground._shoot_answer_mark_border(base, SIGNALS.HIT, [(3, 3)])
         SeaPlayground._shoot_answer_mark_border(base, SIGNALS.MISS, [(0, 4)])
         SeaPlayground._shoot_answer_mark_border(base, SIGNALS.MISS, [(4, 0)])
-        for cell in base._cells:
+        for cell in base.cells:
             if (cell.x, cell.y) in ((0, 1), (1, 0), (1, 1),
                                     (2, 4), (4, 2), (4, 4)):
                 assert cell.value == Cell.BORDER
@@ -273,7 +279,7 @@ class SeaPlaygroundShootTest():
         SeaPlayground.handle_shoot_answer(base, SIGNALS.MISS, [(1, 1)])
         SeaPlayground.handle_shoot_answer(base, SIGNALS.MISS, [(2, 1)])
         SeaPlayground.handle_shoot_answer(base, SIGNALS.KILLED, [(3, 1)])
-        for cell in base._cells:
+        for cell in base.cells:
             if cell.x in (1, 2, 3) and cell.y in (0, 2):
                 assert cell.value == Cell.BORDER
             elif (cell.x, cell.y) in ((1, 1), (2, 1)):
@@ -282,11 +288,6 @@ class SeaPlaygroundShootTest():
                 assert cell.value == Cell.HIT
             else:
                 assert cell.value == Cell.EMPTY
-
-    def test_find_corners(self):
-        base = SeaField(5, 5)
-        assert set(base._find_cell_corners(3, 3)) == {(2, 2), (4, 2), (2, 4), (4, 4)}
-        assert set(base._find_cell_corners(0, 0)) == {(1, 1)}
 
 
 class ComputerPlayerTest1():
