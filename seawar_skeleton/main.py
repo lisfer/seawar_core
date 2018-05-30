@@ -2,6 +2,10 @@ from itertools import product, chain
 from random import choice
 
 
+DEFAULT_MAX_X = 10
+DEFAULT_MAX_Y = 10
+
+
 def get_cell_class(values, default=None):
 
     class Cell:
@@ -59,15 +63,15 @@ class Field:
 
     _field: 'matrix of cells (actually list of lists of Cells)'
 
-    def __init__(self, max_x, max_y):
+    def __init__(self, max_x=DEFAULT_MAX_X, max_y=DEFAULT_MAX_Y):
         self.max_x = max_x
         self.max_y = max_y
         Cell = get_cell_class(['empty', 'ship', 'border'])
         self._field = [[Cell(x, y) for x in range(max_x)] for y in range(max_y)]
 
     @property
-    def cell(self):
-        return chain(*self._field)
+    def cells(self):
+        return list(chain(*self._field))
 
     def is_coord_correct(self, x, y):
         return Matrix.is_coord_correct(x, y, self.max_x, self.max_y)

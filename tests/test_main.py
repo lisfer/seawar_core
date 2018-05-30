@@ -1,6 +1,6 @@
 import unittest
 
-from seawar_skeleton.main import get_cell_class, Matrix
+from seawar_skeleton.main import get_cell_class, Matrix, Field
 
 
 class CellTest(unittest.TestCase):
@@ -69,4 +69,53 @@ class MatrixTest(unittest.TestCase):
 
 
 class FieldTest(unittest.TestCase):
-    pass
+
+    def test_init(self):
+        f = Field(5, 3)
+        self.assertEqual(f.max_y, 3)
+        self.assertEqual(f.max_x, 5)
+        self.assertEqual(len(f.cells), 15)
+        for c in f.cells:
+            self.assertEqual(c.value, 'empty')
+
+    def test_is_coord_correct(self):
+        f = Field(5, 5)
+        self.assertTrue(f.is_coord_correct(0, 0))
+        self.assertFalse(f.is_coord_correct(5, 0))
+        self.assertFalse(f.is_coord_correct(2, -1))
+
+    def test_get(self):
+        f = Field(5, 5)
+        cell = f.get(3, 3)
+        self.assertEqual(cell.x, 3)
+        self.assertEqual(cell.y, 3)
+
+    def test_draw_ship(self):
+        f = Field(5, 5)
+        f.draw_ship([(1, 1), (1, 2)])
+        for c in f.cells:
+            if (c.x, c.y) in ((1, 1), (1, 2)):
+                self.assertEqual(c.value, 'ship')
+            else:
+                self.assertEqual(c.value, 'empty')
+
+    def test_draw_border(self):
+        f = Field(5, 5)
+        f.draw_border([(1, 1), (1, 2)])
+        for c in f.cells:
+            if (c.x, c.y) in ((1, 1), (1, 2)):
+                self.assertEqual(c.value, 'border')
+            else:
+                self.assertEqual(c.value, 'empty')
+
+    def test_is_suitable_vector(self):
+        f = Field(5, 5)
+
+        self.assertTrue(f.is_suitable_vektor(1, 1, 3))
+        self.assertTrue(f.is_suitable_vektor(1, 1, 3, True))
+
+        self.assertFalse(f.is_suitable_vektor(3, 3, 3))
+        self.assertFalse(f.is_suitable_vektor(3, 3, 3, True))
+        self.assertFalse(f.is_suitable_vektor(-1, 1, 3))
+        self.assertFalse(f.is_suitable_vektor(1, 11, 3, True))
+
