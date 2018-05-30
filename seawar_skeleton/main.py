@@ -1,4 +1,3 @@
-from functools import partial
 from itertools import product, chain
 from random import choice
 
@@ -57,6 +56,8 @@ class Matrix:
 
 
 class Field:
+
+    _field: 'matrix of cells (actually list of lists of Cells)'
 
     def __init__(self, max_x, max_y):
         self.max_x = max_x
