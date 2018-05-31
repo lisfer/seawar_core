@@ -1,34 +1,34 @@
 import unittest
 
-from seawar_skeleton.main import get_cell_class, Matrix, Field, ShipService, CellSea
+from seawar_skeleton.main import base_cell, Matrix, Field, ShipService, CellField
 
 
 class CellTest2(unittest.TestCase):
 
     def test_default_value(self):
-        cell_class = get_cell_class(['ship', 'empty'])
+        cell_class = base_cell(values=['ship', 'empty'])()
         cell = cell_class(1, 1)
         self.assertEqual(cell.value, 'ship')
 
-        cell_class = get_cell_class(['empty', 'ship'])
+        cell_class = base_cell(values=['empty', 'ship'])()
         cell = cell_class(1, 1)
         self.assertEqual(cell.value, 'empty')
 
-        cell_class = get_cell_class(['empty', 'ship'], 'border')
+        cell_class = base_cell(values=['empty', 'ship'], default='border')()
         cell = cell_class(1, 1)
         self.assertEqual(cell.value, 'border')
 
-        cell_class = get_cell_class(['empty', 'ship'])
+        cell_class = base_cell(values=['empty', 'ship'])()
         cell = cell_class(1, 1, 'border')
         self.assertEqual(cell.value, 'border')
 
     def test_init_wo_data(self):
-        cell_class = get_cell_class([])
+        cell_class = base_cell()()
         cell = cell_class(1, 1)
         self.assertIsNone(cell.value)
 
     def test_is_value(self):
-        cell_class = get_cell_class(['empty', 'ship'])
+        cell_class = base_cell(values=['empty', 'ship'])()
         cell = cell_class(1, 1)
         self.assertTrue(cell.is_empty)
         self.assertFalse(cell.is_ship)
@@ -38,7 +38,7 @@ class CellTest2(unittest.TestCase):
         self.assertTrue(cell.is_ship)
 
     def test_mark(self):
-        cell_class = get_cell_class(['empty', 'ship'])
+        cell_class = base_cell(values=['empty', 'ship'])()
         cell = cell_class(1, 1)
         self.assertEqual(cell.value, 'empty')
 
@@ -48,15 +48,13 @@ class CellTest2(unittest.TestCase):
 
 class CellSeaTest(unittest.TestCase):
     def test_shot_empty(self):
-        cell_class = get_cell_class(['empty', 'ship'], _classes=[CellSea])
-        c = cell_class(2, 2)
+        c = CellField(2, 2)
         self.assertFalse(c.is_shooted)
         self.assertFalse(c.shoot())
         self.assertTrue(c.is_shooted)
 
     def test_shot_ship(self):
-        cell_class = get_cell_class(['empty', 'ship'], _classes=[CellSea])
-        c = cell_class(2, 2, 'ship')
+        c = CellField(2, 2, 'ship')
         self.assertFalse(c.is_shooted)
         self.assertTrue(c.shoot())
         self.assertTrue(c.is_shooted)

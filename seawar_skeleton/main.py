@@ -7,37 +7,42 @@ DEFAULT_MAX_Y = 10
 STANDART_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 
-def get_cell_class(values, default=None, _classes=None):
+def base_cell(values=None, default=None):
 
-    _classes = _classes or []
+    def decor(_classes=None):
 
-    class Cell(*_classes):
-        def is_value(self, value):
-            return self.value == value
+        _classes = _classes and (_classes if type(_classes) is list else [_classes]) or []
+        _values = values or []
 
-        def mark_value(self, value):
-            self.value = value
+        class Cell(*_classes):
+            def is_value(self, value):
+                return self.value == value
 
-        def default_value(self):
-            return None
+            def mark_value(self, value):
+                self.value = value
 
-        def __init__(self, x, y, value=None):
-            super(Cell, self).__init__()
-            self.x = x
-            self.y = y
-            self.value = value or self.default_value()
+            def default_value(self):
+                return None
 
-        def __str__(self):
-            return f'[{self.x}: {self.y} => {self.value}]'
+            def __init__(self, x, y, value=None):
+                super(Cell, self).__init__()
+                self.x = x
+                self.y = y
+                self.value = value or self.default_value()
 
-    for v in values:
-        setattr(Cell, f'is_{v}', property(lambda s, v=v: s.is_value(value=v)))
-        setattr(Cell, f'mark_{v}', (lambda s, v=v: s.mark_value(value=v)))
-        setattr(Cell, 'default_value', (lambda s: default or values[0] or None))
-    return Cell
+            def __str__(self):
+                return f'[{self.x}: {self.y} => {self.value}]'
+
+        for v in _values:
+            setattr(Cell, f'is_{v}', property(lambda s, v=v: s.is_value(value=v)))
+            setattr(Cell, f'mark_{v}', (lambda s, v=v: s.mark_value(value=v)))
+            setattr(Cell, 'default_value', (lambda s: default or values[0] or None))
+        return Cell
+    return decor
 
 
-class CellSea:
+@base_cell(['empty', 'ship', 'border'])
+class CellField:
 
     def __init__(self):
         self.is_shooted = False
@@ -105,8 +110,7 @@ class Field:
     def __init__(self, max_x=DEFAULT_MAX_X, max_y=DEFAULT_MAX_Y):
         self.max_x = max_x
         self.max_y = max_y
-        Cell = get_cell_class(['empty', 'ship', 'border'])
-        self._field = [[Cell(x, y) for x in range(max_x)] for y in range(max_y)]
+        self._field = [[CellField(x, y) for x in range(max_x)] for y in range(max_y)]
 
     @property
     def cells(self):
