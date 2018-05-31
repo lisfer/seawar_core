@@ -108,13 +108,13 @@ class FieldTest(unittest.TestCase):
     def test_is_suitable_vector(self):
         f = Field(5, 5)
 
-        self.assertTrue(f.is_suitable_vektor(1, 1, 3))
-        self.assertTrue(f.is_suitable_vektor(1, 1, 3, True))
+        self.assertTrue(f.is_suitable_ship_vektor(1, 1, 3))
+        self.assertTrue(f.is_suitable_ship_vektor(1, 1, 3, True))
 
-        self.assertFalse(f.is_suitable_vektor(3, 3, 3))
-        self.assertFalse(f.is_suitable_vektor(3, 3, 3, True))
-        self.assertFalse(f.is_suitable_vektor(-1, 1, 3))
-        self.assertFalse(f.is_suitable_vektor(1, 11, 3, True))
+        self.assertFalse(f.is_suitable_ship_vektor(3, 3, 3))
+        self.assertFalse(f.is_suitable_ship_vektor(3, 3, 3, True))
+        self.assertFalse(f.is_suitable_ship_vektor(-1, 1, 3))
+        self.assertFalse(f.is_suitable_ship_vektor(1, 11, 3, True))
 
     def test_is_coord_correct(self):
         f = Field(5, 5)
@@ -145,6 +145,32 @@ class FilterCorrectCoord(unittest.TestCase):
 
 
 class ShipServiceTest(unittest.TestCase):
+
+    def test_get_ship_by_cell_h(self):
+        f = Field(5, 5)
+        f.get(1, 2).mark_ship()
+        f.get(2, 2).mark_ship()
+        f.get(3, 2).mark_ship()
+        self.assertFalse(
+            set(ShipService.get_ship_by_cell(f, 2, 2)).difference([(1, 2), (2, 2), (3, 2)]))
+
+    def test_get_ship_by_cell_v(self):
+        f = Field(5, 5)
+        f.get(2, 1).mark_ship()
+        f.get(2, 2).mark_ship()
+        f.get(2, 3).mark_ship()
+        self.assertFalse(
+            set(ShipService.get_ship_by_cell(f, 2, 2)).difference([(2, 1), (2, 2), (2, 3)]))
+
+    def test_get_ship_by_cell_surrounded(self):
+        f = Field()
+        f.get(3, 3).mark_ship()
+        f.get(1, 3).mark_ship()
+        f.get(3, 1).mark_ship()
+        f.get(5, 3).mark_ship()
+        f.get(3, 5).mark_ship()
+        self.assertEqual(ShipService.get_ship_by_cell(f, 3, 3), [(3, 3)])
+
     def test_get_available_vectors(self):
         f = Field(3, 3)
         f.get(0, 0).mark_ship()
@@ -178,3 +204,7 @@ class ShipServiceTest(unittest.TestCase):
     def test_pit_ships_random(self):
         f = Field()
         ShipService.put_ships_random(f)
+        ships = set()
+        for c in f.cells:
+            if c.is_ship:
+                ships.update(ShipService.get_ship_by_cell(f, c.x, c.y))

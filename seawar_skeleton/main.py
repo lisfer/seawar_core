@@ -1,4 +1,5 @@
-from itertools import product, chain
+from functools import partial
+from itertools import product, chain, takewhile
 from random import choice
 
 DEFAULT_MAX_X = 10
@@ -48,6 +49,13 @@ def filter_correct_coord(func):
 
 
 class Matrix:
+
+    @staticmethod
+    def next_coord(coord_x, coord_y, is_vertical=False, step=1):
+        x, y = coord_x, coord_y
+        while True:
+            yield x, y
+            x, y = x + step * (not is_vertical), y + step * is_vertical
 
     @staticmethod
     @filter_correct_coord
@@ -110,7 +118,7 @@ class Field:
     def draw_border(self, coords):
         [self.get(*coord).mark_border() for coord in coords]
 
-    def is_suitable_vektor(self, coord_x, coord_y, length, is_vertical=False):
+    def is_suitable_ship_vektor(self, coord_x, coord_y, length, is_vertical=False):
         coords = Matrix.coords_by_vektor(coord_x, coord_y, length, is_vertical)
         _check = lambda x, y: self.is_correct_coord(x, y) and self.get(x, y).is_empty
         return coords and all([_check(*coord) for coord in coords])
@@ -121,8 +129,14 @@ class Field:
 
 class ShipService:
 
-    def get_ship_by_cell(self, field, coord_x, coord_y):
-        pass
+    @staticmethod
+    def get_ship_by_cell(field, coord_x, coord_y):
+        _check = lambda c: field.get(*c).is_ship
+        _next = partial(Matrix.next_coord, coord_x, coord_y)
+
+        return list(set(chain.from_iterable(
+            takewhile(_check, _next(is_vert, step))
+            for is_vert, step in product([True, False], [-1, 1]))))
 
     def get_ship_if_killed(self, coord_x, coord_y):
         pass
@@ -131,7 +145,7 @@ class ShipService:
     def get_available_vectors(field, length) -> 'list(tuple(x, y, length, is_vert))':
         return [(cell.x, cell.y, length, is_vertical)
                 for cell, is_vertical in product(field.cells, (True, False))
-                if field.is_suitable_vektor(cell.x, cell.y, length, is_vertical)]
+                if field.is_suitable_ship_vektor(cell.x, cell.y, length, is_vertical)]
 
     @staticmethod
     def put_ship(field, coord_x, coord_y, length, is_vertical=False):
