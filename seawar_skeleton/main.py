@@ -131,7 +131,7 @@ class ShipService:
 
     @staticmethod
     def get_ship_by_cell(field, coord_x, coord_y):
-        _check = lambda c: field.get(*c).is_ship
+        _check = lambda c: field.is_correct_coord(*c) and field.get(*c).is_ship
         _next = partial(Matrix.next_coord, coord_x, coord_y)
 
         return list(set(chain.from_iterable(

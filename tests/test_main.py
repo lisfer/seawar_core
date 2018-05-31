@@ -66,9 +66,18 @@ class MatrixTest(unittest.TestCase):
     def test_borders_by_vektor(self):
         borders = Matrix.borders_by_vektor(0, 0, 2)
         self.assertFalse(
-            set([(-1, -1), (0, -1), (1, -1), (2, -1),
-                 (-1, 1), (0, 1), (1, 1), (2, 1),
-                 (-1, 0), (2, 0)]).difference(borders))
+            {(-1, -1), (0, -1), (1, -1), (2, -1),
+             (-1, 1), (0, 1), (1, 1), (2, 1),
+             (-1, 0), (2, 0)}.difference(borders))
+
+    def test_next_coord(self):
+        n_coord = Matrix.next_coord(1, 1)
+        for i in range(10):
+            self.assertEqual(next(n_coord), (1 + i, 1))
+
+        n_coord = Matrix.next_coord(1, 1, True, -1)
+        for i in range(10):
+            self.assertEqual(next(n_coord), (1, 1 - i))
 
 
 class FieldTest(unittest.TestCase):
@@ -202,9 +211,11 @@ class ShipServiceTest(unittest.TestCase):
                 self.assertTrue(cell.is_empty)
 
     def test_pit_ships_random(self):
-        f = Field()
-        ShipService.put_ships_random(f)
+        f = Field(5, 5)
+        ShipService.put_ships_random(f, fleet=[5, 1])
         ships = set()
         for c in f.cells:
             if c.is_ship:
-                ships.update(ShipService.get_ship_by_cell(f, c.x, c.y))
+                ships.add(tuple( ShipService.get_ship_by_cell(f, c.x, c.y)))
+        self.assertEqual(2, len(ships))
+        self.assertEqual(sum([len(i) for i in ships]), 6)
