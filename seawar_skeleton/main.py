@@ -1,13 +1,11 @@
 from itertools import product, chain
 from random import choice
 
-
 DEFAULT_MAX_X = 10
 DEFAULT_MAX_Y = 10
 
 
 def get_cell_class(values, default=None):
-
     class Cell:
 
         def is_value(self, value):
@@ -34,13 +32,18 @@ def get_cell_class(values, default=None):
 class Matrix:
 
     @staticmethod
-    def coords_by_vektor(coord_x, coord_y, length, is_vertical=False):
-        return [(coord_x + i * (not is_vertical), coord_y + i * is_vertical)
-                for i in range(length)]
+    def coords_by_vektor(coord_x, coord_y, length, is_vertical=False, incremental=True):
+        _range = range(length) if incremental else range(1 - length, 1)
+        return [(coord_x + i * (not is_vertical), coord_y + i * is_vertical) for i in _range]
 
     @staticmethod
     def borders_by_vektor(coord_x, coord_y, length, is_vertical=False):
-        pass
+        v_length, h_length = (length, 1) if is_vertical else (1, length)
+        return list(set(sum([
+            Matrix.coords_by_vektor(coord_x - 1, coord_y - 1, h_length + 2, False),
+            Matrix.coords_by_vektor(coord_x - 1, coord_y - 1, v_length + 2, True),
+            Matrix.coords_by_vektor(coord_x + h_length, coord_y + v_length, h_length + 2, False, False),
+            Matrix.coords_by_vektor(coord_x + h_length, coord_y + v_length, v_length + 2, True, False)], [])))
 
     @staticmethod
     def ribs_for_coord(coord_x, coord_y):
@@ -60,7 +63,6 @@ class Matrix:
 
 
 class Field:
-
     _field: 'matrix of cells (actually list of lists of Cells)'
 
     def __init__(self, max_x=DEFAULT_MAX_X, max_y=DEFAULT_MAX_Y):
@@ -73,15 +75,25 @@ class Field:
     def cells(self):
         return list(chain(*self._field))
 
+    def __repr__(self):
+        return '<Field (max_x={}; max_y={})>'.format(self.max_x, self.max_y)
+
+    def __str__(self):
+        out = repr(self)
+        cell_template = lambda c: f"[{' ' if c.is_empty else '.' if c.is_border else 'X'}]"
+        for row in self._field:
+            out += '\n\t' + ''.join([cell_template(c) for c in row])
+        return out + '\n'
+
     def is_coord_correct(self, x, y):
         return Matrix.is_coord_correct(x, y, self.max_x, self.max_y)
 
     def get(self, x, y):
         return self._field[y][x]
-    
+
     def draw_ship(self, coords):
         [self.get(*coord).mark_ship() for coord in coords]
-    
+
     def draw_border(self, coords):
         [self.get(*coord).mark_border() for coord in coords]
 
@@ -89,7 +101,7 @@ class Field:
         coords = Matrix.coords_by_vektor(coord_x, coord_y, length, is_vertical)
         _check = lambda x, y: self.is_coord_correct(x, y) and self.get(x, y).is_empty
         return coords and all([_check(*coord) for coord in coords])
-    
+
 
 class ShipService:
 
@@ -115,8 +127,10 @@ class ShipService:
         cells = ShipService.get_available_vectors(field, length)
         ShipService.put_ship(*choice(cells))
 
-    def put_ships_random(self, fleet):
-        pass
+    @staticmethod
+    def put_ships_random(fleet):
+        for length in fleet:
+            ShipService.put_ship(length)
 
 
 class TargetField:
