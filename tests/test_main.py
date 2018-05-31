@@ -1,9 +1,9 @@
 import unittest
 
-from seawar_skeleton.main import get_cell_class, Matrix, Field, ShipService
+from seawar_skeleton.main import get_cell_class, Matrix, Field, ShipService, CellSea
 
 
-class CellTest(unittest.TestCase):
+class CellTest2(unittest.TestCase):
 
     def test_default_value(self):
         cell_class = get_cell_class(['ship', 'empty'])
@@ -44,6 +44,23 @@ class CellTest(unittest.TestCase):
 
         cell.mark_ship()
         self.assertEqual(cell.value, 'ship')
+
+
+class CellSeaTest(unittest.TestCase):
+    def test_shot_empty(self):
+        cell_class = get_cell_class(['empty', 'ship'], _classes=[CellSea])
+        c = cell_class(2, 2)
+        self.assertFalse(c.is_shooted)
+        self.assertFalse(c.shoot())
+        self.assertTrue(c.is_shooted)
+
+    def test_shot_ship(self):
+        cell_class = get_cell_class(['empty', 'ship'], _classes=[CellSea])
+        c = cell_class(2, 2, 'ship')
+        self.assertFalse(c.is_shooted)
+        self.assertTrue(c.shoot())
+        self.assertTrue(c.is_shooted)
+
 
 
 class MatrixTest(unittest.TestCase):
@@ -153,7 +170,7 @@ class FilterCorrectCoord(unittest.TestCase):
         self.assertEqual(coord, [(0, 1), (1, 1)])
 
 
-class ShipServiceTest(unittest.TestCase):
+class ShipServiceTestGetShip(unittest.TestCase):
 
     def test_get_ship_by_cell_h(self):
         f = Field(5, 5)
@@ -179,6 +196,9 @@ class ShipServiceTest(unittest.TestCase):
         f.get(5, 3).mark_ship()
         f.get(3, 5).mark_ship()
         self.assertEqual(ShipService.get_ship_by_cell(f, 3, 3), [(3, 3)])
+
+
+class ShipServiceTest(unittest.TestCase):
 
     def test_get_available_vectors(self):
         f = Field(3, 3)

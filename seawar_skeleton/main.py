@@ -7,9 +7,11 @@ DEFAULT_MAX_Y = 10
 STANDART_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 
-def get_cell_class(values, default=None):
-    class Cell:
+def get_cell_class(values, default=None, _classes=None):
 
+    _classes = _classes or []
+
+    class Cell(*_classes):
         def is_value(self, value):
             return self.value == value
 
@@ -20,6 +22,7 @@ def get_cell_class(values, default=None):
             return None
 
         def __init__(self, x, y, value=None):
+            super(Cell, self).__init__()
             self.x = x
             self.y = y
             self.value = value or self.default_value()
@@ -32,6 +35,16 @@ def get_cell_class(values, default=None):
         setattr(Cell, f'mark_{v}', (lambda s, v=v: s.mark_value(value=v)))
         setattr(Cell, 'default_value', (lambda s: default or values[0] or None))
     return Cell
+
+
+class CellSea:
+
+    def __init__(self):
+        self.is_shooted = False
+
+    def shoot(self):
+        self.is_shooted = True
+        return self.is_ship
 
 
 def filter_correct_coord(func):
@@ -130,7 +143,7 @@ class Field:
 class ShipService:
 
     @staticmethod
-    def get_ship_by_cell(field, coord_x, coord_y):
+    def get_ship_by_cell(field, coord_x, coord_y) -> 'list(coord)':
         _check = lambda c: field.is_correct_coord(*c) and field.get(*c).is_ship
         _next = partial(Matrix.next_coord, coord_x, coord_y)
 
@@ -139,6 +152,8 @@ class ShipService:
             for is_vert, step in product([True, False], [-1, 1]))))
 
     def get_ship_if_killed(self, coord_x, coord_y):
+        # cells = ShipService.get_ship_by_cell(coord_x, coord_y)
+        # if cells and all([cell.shooted])
         pass
 
     @staticmethod
