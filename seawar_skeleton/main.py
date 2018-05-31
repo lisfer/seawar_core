@@ -101,7 +101,8 @@ class Matrix:
 
     @staticmethod
     def vektor_by_coords(cells):
-        pass
+        x1, y1, x2, y2 = *min(cells), *max(cells)
+        return x1, y1, len(cells), y2 > y1
 
 
 class Field:
@@ -155,10 +156,13 @@ class ShipService:
             takewhile(_check, _next(is_vert, step))
             for is_vert, step in product([True, False], [-1, 1]))))
 
-    def get_ship_if_killed(self, coord_x, coord_y):
-        # cells = ShipService.get_ship_by_cell(coord_x, coord_y)
-        # if cells and all([cell.shooted])
-        pass
+    @staticmethod
+    def get_ship_if_killed(field, coord_x, coord_y):
+        cells = ShipService.get_ship_by_cell(coord_x, coord_y)
+        response = cells and all([field.get(*c).is_shooted for c in cells]) and dict(ship=cells) or {}
+        if response:
+            response['border'] = Matrix.borders_by_vektor(Matrix.vektor_by_coords(cells))
+        return response
 
     @staticmethod
     def get_available_vectors(field, length) -> 'list(tuple(x, y, length, is_vert))':

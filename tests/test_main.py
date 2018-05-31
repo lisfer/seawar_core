@@ -60,7 +60,6 @@ class CellSeaTest(unittest.TestCase):
         self.assertTrue(c.is_shooted)
 
 
-
 class MatrixTest(unittest.TestCase):
 
     def test_coord_by_vektor_hor(self):
@@ -93,6 +92,21 @@ class MatrixTest(unittest.TestCase):
         n_coord = Matrix.next_coord(1, 1, True, -1)
         for i in range(10):
             self.assertEqual(next(n_coord), (1, 1 - i))
+
+    def test_vektor_by_coord_cell(self):
+        self.assertEqual(
+            Matrix.vektor_by_coords([(1, 1)]),
+            (1, 1, 1, False))
+
+    def test_vektor_by_coord_v(self):
+        self.assertEqual(
+            Matrix.vektor_by_coords([(1, 4), (1, 2), (1, 3)]),
+            (1, 2, 3, True))
+
+    def test_vektor_by_coord_h(self):
+        self.assertEqual(
+            Matrix.vektor_by_coords([(5, 4), (2, 4), (1, 4), (3, 4), (4, 4)]),
+            (1, 4, 5, False))
 
 
 class FieldTest(unittest.TestCase):
