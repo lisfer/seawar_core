@@ -174,3 +174,7 @@ class ShipServiceTest(unittest.TestCase):
                 self.assertTrue(cell.is_border)
             else:
                 self.assertTrue(cell.is_empty)
+
+    def test_pit_ships_random(self):
+        f = Field()
+        ShipService.put_ships_random(f)

@@ -3,6 +3,7 @@ from random import choice
 
 DEFAULT_MAX_X = 10
 DEFAULT_MAX_Y = 10
+STANDART_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 
 def get_cell_class(values, default=None):
@@ -39,7 +40,6 @@ def filter_correct_coord(func):
                 if isinstance(v, Field):
                     return v, args[:i] + args[i + 1:]
             return None, args
-
         field, args = args and get_field(args)
         if field:
             return [c for c in func(*args, **kwargs) if field.is_correct_coord(*c)]
@@ -141,12 +141,13 @@ class ShipService:
     @staticmethod
     def put_ship_random(field, length):
         cells = ShipService.get_available_vectors(field, length)
-        ShipService.put_ship(*choice(cells))
+        ShipService.put_ship(field, *choice(cells))
 
     @staticmethod
-    def put_ships_random(fleet):
+    def put_ships_random(field, fleet=None):
+        fleet = fleet or STANDART_FLEET
         for length in fleet:
-            ShipService.put_ship(length)
+            ShipService.put_ship_random(field, length)
 
 
 class TargetField:
