@@ -70,15 +70,6 @@ class MatrixTest(unittest.TestCase):
                  (-1, 1), (0, 1), (1, 1), (2, 1),
                  (-1, 0), (2, 0)]).difference(borders))
 
-    def test_is_coord_correct(self):
-        self.assertTrue(Matrix.is_coord_correct(3, 3, 5, 5))
-        self.assertTrue(Matrix.is_coord_correct(0, 0, 5, 5))
-        self.assertTrue(Matrix.is_coord_correct(4, 4, 5, 5))
-
-        self.assertFalse(Matrix.is_coord_correct(-1, 4, 5, 5))
-        self.assertFalse(Matrix.is_coord_correct(1, 44, 5, 5))
-        self.assertFalse(Matrix.is_coord_correct(1, 5, 5, 5))
-
 
 class FieldTest(unittest.TestCase):
 
@@ -89,12 +80,6 @@ class FieldTest(unittest.TestCase):
         self.assertEqual(len(f.cells), 15)
         for c in f.cells:
             self.assertEqual(c.value, 'empty')
-
-    def test_is_coord_correct(self):
-        f = Field(5, 5)
-        self.assertTrue(f.is_coord_correct(0, 0))
-        self.assertFalse(f.is_coord_correct(5, 0))
-        self.assertFalse(f.is_coord_correct(2, -1))
 
     def test_get(self):
         f = Field(5, 5)
@@ -131,6 +116,33 @@ class FieldTest(unittest.TestCase):
         self.assertFalse(f.is_suitable_vektor(-1, 1, 3))
         self.assertFalse(f.is_suitable_vektor(1, 11, 3, True))
 
+    def test_is_coord_correct(self):
+        f = Field(5, 5)
+        self.assertTrue(f.is_correct_coord(3, 3))
+        self.assertTrue(f.is_correct_coord(0, 0))
+        self.assertTrue(f.is_correct_coord(4, 4))
+
+        self.assertFalse(f.is_correct_coord(-1, 4))
+        self.assertFalse(f.is_correct_coord(1, 44))
+        self.assertFalse(f.is_correct_coord(1, 5))
+
+
+class FilterCorrectCoord(unittest.TestCase):
+
+    def test_wo_filter(self):
+        coord = Matrix.coords_by_vektor(3, 3, 3, True)
+        self.assertEqual(coord, [(3, 3), (3, 4), (3, 5)])
+
+    def test_with_filter(self):
+        field = Field(4, 4)
+        coord = Matrix.coords_by_vektor(field, 3, 3, 3, True)
+        self.assertEqual(coord, [(3, 3)])
+
+    def test_filter_negative(self):
+        field = Field(4, 4)
+        coord = Matrix.coords_by_vektor(field, -1, 1, 3)
+        self.assertEqual(coord, [(0, 1), (1, 1)])
+
 
 class ShipServiceTest(unittest.TestCase):
     def test_get_available_vectors(self):
@@ -154,11 +166,11 @@ class ShipServiceTest(unittest.TestCase):
 
     def test_put_ship(self):
         f = Field(3, 3)
-        ShipService.put_ship(f, 0, 0, 2)
+        ShipService.put_ship(f, 0, 0, 2, True)
         for cell in f.cells:
-            if (cell.x, cell.y) in ((0, 0), (1, 0)):
-                self.assertTrue(self.is_ship)
-            if (cell.x, cell.y) in ((1, 0), (1, 1), (1, 2), (2, 1)):
-                self.assertTrue(self.is_border)
+            if (cell.x, cell.y) in ((0, 0), (0, 1)):
+                self.assertTrue(cell.is_ship)
+            elif (cell.x, cell.y) in ((1, 0), (1, 1), (1, 2), (0, 2)):
+                self.assertTrue(cell.is_border)
             else:
-                self.assertTrue(self.is_empty)
+                self.assertTrue(cell.is_empty)

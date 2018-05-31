@@ -22,6 +22,9 @@ def get_cell_class(values, default=None):
             self.y = y
             self.value = value or self.default_value()
 
+        def __str__(self):
+            return f'[{self.x}: {self.y} => {self.value}]'
+
     for v in values:
         setattr(Cell, f'is_{v}', property(lambda s, v=v: s.is_value(value=v)))
         setattr(Cell, f'mark_{v}', (lambda s, v=v: s.mark_value(value=v)))
@@ -29,21 +32,38 @@ def get_cell_class(values, default=None):
     return Cell
 
 
+def filter_correct_coord(func):
+    def decor(*args, **kwargs):
+        def get_field(args):
+            for i, v in enumerate(args[:2]):
+                if isinstance(v, Field):
+                    return v, args[:i] + args[i + 1:]
+            return None, args
+
+        field, args = args and get_field(args)
+        if field:
+            return [c for c in func(*args, **kwargs) if field.is_correct_coord(*c)]
+        return func(*args, **kwargs)
+    return decor
+
+
 class Matrix:
 
     @staticmethod
+    @filter_correct_coord
     def coords_by_vektor(coord_x, coord_y, length, is_vertical=False, incremental=True):
         _range = range(length) if incremental else range(1 - length, 1)
         return [(coord_x + i * (not is_vertical), coord_y + i * is_vertical) for i in _range]
 
-    @staticmethod
-    def borders_by_vektor(coord_x, coord_y, length, is_vertical=False):
+    @classmethod
+    @filter_correct_coord
+    def borders_by_vektor(cls, coord_x, coord_y, length, is_vertical=False):
         v_length, h_length = (length, 1) if is_vertical else (1, length)
         return list(set(sum([
-            Matrix.coords_by_vektor(coord_x - 1, coord_y - 1, h_length + 2, False),
-            Matrix.coords_by_vektor(coord_x - 1, coord_y - 1, v_length + 2, True),
-            Matrix.coords_by_vektor(coord_x + h_length, coord_y + v_length, h_length + 2, False, False),
-            Matrix.coords_by_vektor(coord_x + h_length, coord_y + v_length, v_length + 2, True, False)], [])))
+            cls.coords_by_vektor(coord_x - 1, coord_y - 1, h_length + 2, False),
+            cls.coords_by_vektor(coord_x - 1, coord_y - 1, v_length + 2, True),
+            cls.coords_by_vektor(coord_x + h_length, coord_y + v_length, h_length + 2, False, False),
+            cls.coords_by_vektor(coord_x + h_length, coord_y + v_length, v_length + 2, True, False)], [])))
 
     @staticmethod
     def ribs_for_coord(coord_x, coord_y):
@@ -56,10 +76,6 @@ class Matrix:
     @staticmethod
     def vektor_by_coords(cells):
         pass
-
-    @staticmethod
-    def is_coord_correct(x, y, max_x, max_y):
-        return (0 <= x < max_x) and (0 <= y < max_y)
 
 
 class Field:
@@ -85,9 +101,6 @@ class Field:
             out += '\n\t' + ''.join([cell_template(c) for c in row])
         return out + '\n'
 
-    def is_coord_correct(self, x, y):
-        return Matrix.is_coord_correct(x, y, self.max_x, self.max_y)
-
     def get(self, x, y):
         return self._field[y][x]
 
@@ -99,8 +112,11 @@ class Field:
 
     def is_suitable_vektor(self, coord_x, coord_y, length, is_vertical=False):
         coords = Matrix.coords_by_vektor(coord_x, coord_y, length, is_vertical)
-        _check = lambda x, y: self.is_coord_correct(x, y) and self.get(x, y).is_empty
+        _check = lambda x, y: self.is_correct_coord(x, y) and self.get(x, y).is_empty
         return coords and all([_check(*coord) for coord in coords])
+
+    def is_correct_coord(self, coord_x, coord_y):
+        return 0 <= coord_x < self.max_x and 0 <= coord_y < self.max_y
 
 
 class ShipService:
@@ -119,8 +135,8 @@ class ShipService:
 
     @staticmethod
     def put_ship(field, coord_x, coord_y, length, is_vertical=False):
-        field.draw_ship(Matrix.coords_by_vektor(coord_x, coord_y, length, is_vertical))
-        field.draw_border(Matrix.borders_by_vektor(coord_x, coord_y, length, is_vertical))
+        field.draw_ship(Matrix.coords_by_vektor(field, coord_x, coord_y, length, is_vertical))
+        field.draw_border(Matrix.borders_by_vektor(field, coord_x, coord_y, length, is_vertical))
 
     @staticmethod
     def put_ship_random(field, length):
