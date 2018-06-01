@@ -7,6 +7,10 @@ DEFAULT_MAX_Y = 10
 STANDART_FLEET = [4, 3, 3, 2, 2, 2, 1, 1, 1, 1]
 
 
+class CoordOutOfRange(Exception):
+    pass
+
+
 def base_cell(values=None, default=None):
 
     def decor(_classes=None):
@@ -185,6 +189,13 @@ class ShipService:
         fleet = fleet or STANDART_FLEET
         for length in fleet:
             ShipService.put_ship_random(field, length)
+
+    @staticmethod
+    def shoot_to(field, coord_x, coord_y):
+        if not field.is_correct_coord(coord_x, coord_y):
+            raise CoordOutOfRange()
+        return field.get(coord_x, coord_y).shoot()
+
 
 
 class TargetField:

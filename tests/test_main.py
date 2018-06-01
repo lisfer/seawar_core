@@ -1,6 +1,6 @@
 import unittest
 
-from seawar_skeleton.main import base_cell, Matrix, Field, ShipService, CellField
+from seawar_skeleton.main import base_cell, Matrix, Field, ShipService, CellField, CoordOutOfRange
 
 
 class CellTest2(unittest.TestCase):
@@ -251,3 +251,34 @@ class ShipServiceTest(unittest.TestCase):
                 ships.add(tuple( ShipService.get_ship_by_cell(f, c.x, c.y)))
         self.assertEqual(2, len(ships))
         self.assertEqual(sum([len(i) for i in ships]), 6)
+
+    def test_income_shoot_missed(self):
+        f = Field(4, 4)
+        cell = f.get(2, 2)
+        self.assertFalse(ShipService.shoot_to(f, 2, 2))
+        self.assertTrue(cell.is_shooted)
+        self.assertTrue(cell.is_empty)
+
+    def test_income_shoot_border(self):
+        f = Field(4, 4)
+        cell = f.get(2, 2)
+        cell.mark_border()
+        self.assertFalse(ShipService.shoot_to(f, 2, 2))
+        self.assertTrue(cell.is_shooted)
+        self.assertTrue(cell.is_border)
+
+    def test_income_shoot_hit(self):
+        f = Field(4, 4)
+        cell = f.get(2, 2)
+        cell.mark_ship()
+        self.assertTrue(ShipService.shoot_to(f, 2, 2))
+        self.assertTrue(cell.is_shooted)
+        self.assertTrue(cell.is_ship)
+
+    def test_income_shoot_outrange(self):
+        f = Field(4, 4)
+        with self.assertRaises(CoordOutOfRange):
+            ShipService.shoot_to(f, 22, 2)
+
+        with self.assertRaises(CoordOutOfRange):
+            ShipService.shoot_to(f, 2, -2)
