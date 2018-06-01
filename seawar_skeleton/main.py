@@ -162,6 +162,15 @@ class ShipService:
 
     @staticmethod
     def get_ship_if_killed(field, coord_x, coord_y):
+        """
+        Checks if the ship on (x; y) position is killed
+        :param field: <Field> object
+        :param coord_x: <int>
+        :param coord_y: <int>
+        :return: dict with coordinated of ship cells and border cells:
+            {"ship": [(x, y), ...], "border": [(x, y), ...]}
+            if ship was not killed - empty dict
+        """
         cells = ShipService.get_ship_by_cell(coord_x, coord_y)
         response = cells and all([field.get(*c).is_shooted for c in cells]) and dict(ship=cells) or {}
         if response:
@@ -186,15 +195,30 @@ class ShipService:
 
     @staticmethod
     def put_ships_random(field, fleet=None):
+        """
+        :param field: <Field> object where ships should be placed
+        :param fleet: <list> of <int> numbers. Every number - length of the ship
+        :return:
+        """
         fleet = fleet or STANDART_FLEET
         for length in fleet:
             ShipService.put_ship_random(field, length)
 
     @staticmethod
     def shoot_to(field, coord_x, coord_y):
+        """
+        :param field: <Field> object to which shoot should be made
+        :param coord_x: <int>
+        :param coord_y: <int>
+        :return: <bool>
+        """
         if not field.is_correct_coord(coord_x, coord_y):
             raise CoordOutOfRange()
         return field.get(coord_x, coord_y).shoot()
+
+    @staticmethod
+    def is_fleet_killed():
+        pass
 
 
 
