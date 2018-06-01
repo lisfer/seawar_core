@@ -1,6 +1,6 @@
 import unittest
 
-from seawar_skeleton.main import base_cell, Matrix, Field, ShipService, CellField, CoordOutOfRange
+from seawar_skeleton.main import base_cell, Matrix, Field, ShipService, CellField, CoordOutOfRange, UnknownCellValue
 
 
 class CellTest2(unittest.TestCase):
@@ -14,11 +14,11 @@ class CellTest2(unittest.TestCase):
         cell = cell_class(1, 1)
         self.assertEqual(cell.value, 'empty')
 
-        cell_class = base_cell(values=['empty', 'ship'], default='border')()
+        cell_class = base_cell(values=['empty', 'ship', 'border'], default='border')()
         cell = cell_class(1, 1)
         self.assertEqual(cell.value, 'border')
 
-        cell_class = base_cell(values=['empty', 'ship'])()
+        cell_class = base_cell(values=['empty', 'ship', 'border'])()
         cell = cell_class(1, 1, 'border')
         self.assertEqual(cell.value, 'border')
 
@@ -44,6 +44,18 @@ class CellTest2(unittest.TestCase):
 
         cell.mark_ship()
         self.assertEqual(cell.value, 'ship')
+
+    def test_set_unknown_value(self):
+        cell_class = base_cell(values=['empty', 'ship'])()
+        cell = cell_class(1, 1)
+        with self.assertRaises(UnknownCellValue):
+            cell.value = 'wtf'
+
+    def test_set_unknown_value_allowed(self):
+        cell_class = base_cell()()
+        cell = cell_class(1, 1)
+        cell.value = 'wtf'
+        self.assertEqual(cell.value, 'wtf')
 
 
 class CellSeaTest(unittest.TestCase):
@@ -164,6 +176,33 @@ class FieldTest(unittest.TestCase):
         self.assertFalse(f.is_correct_coord(1, 44))
         self.assertFalse(f.is_correct_coord(1, 5))
 
+    def test_set(self):
+        f = Field(5, 5)
+
+        f.set(2, 2, 'ship')
+        self.assertTrue(f.get(2, 2).is_ship)
+        self.assertFalse(f.get(2, 2).is_shooted)
+
+        f.set(2, 2, 'border', True)
+        self.assertTrue(f.get(2, 2).is_border)
+        self.assertTrue(f.get(2, 2).is_shooted)
+
+    def test_set_outrange(self):
+        f = Field(5, 5)
+
+        with self.assertRaises(CoordOutOfRange):
+            f.set(-1, 2, 'ship')
+
+        with self.assertRaises(CoordOutOfRange):
+            f.set(2, 44, 'ship')
+
+    def test_set_unkonw_value(self):
+        f = Field(5, 5)
+        f.set(2, 2, 'ship')
+        self.assertTrue(f.get(2, 2).is_ship)
+        with self.assertRaises(UnknownCellValue):
+            f.set(1, 1, 'unknown')
+
 
 class FilterCorrectCoord(unittest.TestCase):
 
@@ -210,7 +249,7 @@ class ShipServiceTestGetShip(unittest.TestCase):
         self.assertEqual(ShipService.get_ship_by_cell(f, 3, 3), [(3, 3)])
 
 
-class ShipServiceTest(unittest.TestCase):
+class ShipServiceSetShipTest(unittest.TestCase):
 
     def test_get_available_vectors(self):
         f = Field(3, 3)
@@ -251,6 +290,9 @@ class ShipServiceTest(unittest.TestCase):
                 ships.add(tuple( ShipService.get_ship_by_cell(f, c.x, c.y)))
         self.assertEqual(2, len(ships))
         self.assertEqual(sum([len(i) for i in ships]), 6)
+
+
+class ShipServiceTest(unittest.TestCase):
 
     def test_income_shoot_missed(self):
         f = Field(4, 4)
@@ -309,7 +351,6 @@ class ShipServiceTest(unittest.TestCase):
 
         self.assertFalse(set(resp['ship']).difference([(0, 0), (0, 1)]))
         self.assertFalse(set(resp['border']).difference([(1, 0), (1, 1), (1, 2), (0, 2)]))
-
 
     def test_get_ship_outrange(self):
         f = Field(3, 3)

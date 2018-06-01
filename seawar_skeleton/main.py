@@ -11,6 +11,10 @@ class CoordOutOfRange(Exception):
     pass
 
 
+class UnknownCellValue(Exception):
+    pass
+
+
 def base_cell(values=None, default=None):
 
     def decor(_classes=None):
@@ -36,6 +40,14 @@ def base_cell(values=None, default=None):
 
             def __str__(self):
                 return f'[{self.x}: {self.y} => {self.value}]'
+
+            def __setattr__(self, attr, value):
+                if attr == 'value' and value and self.VALUES and value not in self.VALUES:
+                    raise UnknownCellValue()
+                return super(Cell, self).__setattr__(attr, value)
+
+
+        setattr(Cell, 'VALUES', values)
 
         for v in _values:
             setattr(Cell, f'is_{v}', property(lambda s, v=v: s.is_value(value=v)))
@@ -72,10 +84,10 @@ def filter_correct_coord(func):
 
 def check_coord(func):
 
-    def decor(field, x, y):
+    def decor(field, x, y, *args, **kwargs):
         if not field.is_correct_coord(x, y):
             raise CoordOutOfRange()
-        return func(field, x, y)
+        return func(field, x, y, *args, **kwargs)
 
     return decor
 
@@ -144,8 +156,8 @@ class Field:
     def get(self, x, y):
         return self._field[y][x]
 
+    @check_coord
     def set(self, x, y, value, is_shooted=False):
-        # TODO: has external access - check value
         cell = self.get(x, y)
         cell.value = value
         cell.is_shooted = is_shooted
