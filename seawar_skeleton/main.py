@@ -134,6 +134,12 @@ class Field:
     def get(self, x, y):
         return self._field[y][x]
 
+    def set(self, x, y, value, is_shooted=False):
+        # TODO: has external access - check value
+        cell = self.get(x, y)
+        cell.value = value
+        cell.is_shooted = is_shooted
+
     def draw_ship(self, coords):
         [self.get(*coord).mark_ship() for coord in coords]
 
@@ -171,10 +177,10 @@ class ShipService:
             {"ship": [(x, y), ...], "border": [(x, y), ...]}
             if ship was not killed - empty dict
         """
-        cells = ShipService.get_ship_by_cell(coord_x, coord_y)
+        cells = ShipService.get_ship_by_cell(field, coord_x, coord_y)
         response = cells and all([field.get(*c).is_shooted for c in cells]) and dict(ship=cells) or {}
         if response:
-            response['border'] = Matrix.borders_by_vektor(Matrix.vektor_by_coords(cells))
+            response['border'] = Matrix.borders_by_vektor(*Matrix.vektor_by_coords(cells))
         return response
 
     @staticmethod
@@ -217,9 +223,11 @@ class ShipService:
         return field.get(coord_x, coord_y).shoot()
 
     @staticmethod
-    def is_fleet_killed():
-        pass
-
+    def is_fleet_killed(field: Field) -> bool:
+        """
+        Checks if all field were killed
+        """
+        return not any(not cell.is_shooted for cell in field.cells if cell.is_ship)
 
 
 class TargetField:

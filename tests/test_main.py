@@ -282,3 +282,11 @@ class ShipServiceTest(unittest.TestCase):
 
         with self.assertRaises(CoordOutOfRange):
             ShipService.shoot_to(f, 2, -2)
+
+    def test_is_fleet_killed(self):
+        f = Field(4, 4)
+        self.assertTrue(ShipService.is_fleet_killed(f))
+        f.get(2, 2).mark_ship()
+        self.assertFalse(ShipService.is_fleet_killed(f))
+        f.get(2, 2).shoot()
+        self.assertTrue(ShipService.is_fleet_killed(f))
