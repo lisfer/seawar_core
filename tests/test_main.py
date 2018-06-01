@@ -290,3 +290,31 @@ class ShipServiceTest(unittest.TestCase):
         self.assertFalse(ShipService.is_fleet_killed(f))
         f.get(2, 2).shoot()
         self.assertTrue(ShipService.is_fleet_killed(f))
+
+    def test_get_ship_if_killed(self):
+        f = Field(5, 5)
+        f.get(0, 1).mark_ship()
+        f.get(0, 0).mark_ship()
+
+        self.assertEqual(ShipService.get_ship_if_killed(f, 0, 1), {})
+
+        f.get(0, 1).shoot()
+        self.assertEqual(ShipService.get_ship_if_killed(f, 0, 0), {})
+
+        f.get(0, 0).shoot()
+        resp = ShipService.get_ship_if_killed(f, 0, 1)
+
+        self.assertEqual(len(resp['ship']), 2)
+        self.assertEqual(len(resp['border']), 4)
+
+        self.assertFalse(set(resp['ship']).difference([(0, 0), (0, 1)]))
+        self.assertFalse(set(resp['border']).difference([(1, 0), (1, 1), (1, 2), (0, 2)]))
+
+
+    def test_get_ship_outrange(self):
+        f = Field(3, 3)
+        with self.assertRaises(CoordOutOfRange):
+            ShipService.get_ship_if_killed(f, -1, 2)
+
+        with self.assertRaises(CoordOutOfRange):
+            ShipService.get_ship_if_killed(f, 0, 32)

@@ -58,15 +58,25 @@ class CellField:
 
 def filter_correct_coord(func):
     def decor(*args, **kwargs):
-        def get_field(args):
+        def pop_field(args):
             for i, v in enumerate(args[:2]):
                 if isinstance(v, Field):
                     return v, args[:i] + args[i + 1:]
             return None, args
-        field, args = args and get_field(args)
+        field, args = args and pop_field(args)
         if field:
             return [c for c in func(*args, **kwargs) if field.is_correct_coord(*c)]
         return func(*args, **kwargs)
+    return decor
+
+
+def check_coord(func):
+
+    def decor(field, x, y):
+        if not field.is_correct_coord(x, y):
+            raise CoordOutOfRange()
+        return func(field, x, y)
+
     return decor
 
 
@@ -167,6 +177,7 @@ class ShipService:
             for is_vert, step in product([True, False], [-1, 1]))))
 
     @staticmethod
+    @check_coord
     def get_ship_if_killed(field, coord_x, coord_y):
         """
         Checks if the ship on (x; y) position is killed
@@ -180,7 +191,7 @@ class ShipService:
         cells = ShipService.get_ship_by_cell(field, coord_x, coord_y)
         response = cells and all([field.get(*c).is_shooted for c in cells]) and dict(ship=cells) or {}
         if response:
-            response['border'] = Matrix.borders_by_vektor(*Matrix.vektor_by_coords(cells))
+            response['border'] = Matrix.borders_by_vektor(field, *Matrix.vektor_by_coords(cells))
         return response
 
     @staticmethod
@@ -211,6 +222,7 @@ class ShipService:
             ShipService.put_ship_random(field, length)
 
     @staticmethod
+    @check_coord
     def shoot_to(field, coord_x, coord_y):
         """
         :param field: <Field> object to which shoot should be made
@@ -218,8 +230,6 @@ class ShipService:
         :param coord_y: <int>
         :return: <bool>
         """
-        if not field.is_correct_coord(coord_x, coord_y):
-            raise CoordOutOfRange()
         return field.get(coord_x, coord_y).shoot()
 
     @staticmethod
