@@ -1,6 +1,7 @@
 import unittest
 
-from seawar_skeleton.main import base_cell, Matrix, Field, ShipService, CellField, CoordOutOfRange, UnknownCellValue
+from seawar_core.seawar_core import base_cell, Matrix, Field, ShipService, CellField, CoordOutOfRange, UnknownCellValue, \
+    TargetField, CellTarget
 
 
 class CellTest2(unittest.TestCase):
@@ -359,3 +360,54 @@ class ShipServiceTest(unittest.TestCase):
 
         with self.assertRaises(CoordOutOfRange):
             ShipService.get_ship_if_killed(f, 0, 32)
+
+
+class TargetCellTest(unittest.TestCase):
+
+    def test_methods(self):
+        c = CellTarget(1, 2)
+        self.assertEqual(c.value, 'empty')
+
+        c.mark_hit()
+        self.assertTrue(c.is_hit)
+        c.mark_border()
+        self.assertTrue(c.is_border)
+        c.mark_miss()
+        self.assertTrue(c.is_miss)
+        c.mark_empty()
+        self.assertTrue(c.is_empty)
+
+
+class TargetFieldTest(unittest.TestCase):
+
+    def test_select_cell(self):
+        """
+        should select only empty cell
+        :return:
+        """
+        f = TargetField(2, 2)
+        f.get(0, 0).mark_miss()
+        f.get(0, 1).mark_border()
+        f.get(1, 0).mark_hit()
+        for i in range(10):
+            self.assertEqual(f.select_cell(), (1, 1))
+
+    def test_shoot_response_miss(self):
+        f = TargetField(5, 5)
+        f.shoot_response(1, 1, False)
+        f.shoot_response(2, 2, False)
+        for c in f.cells:
+            if (c.x, c.y) in ((1, 1), (2, 2)):
+                self.assertTrue(c.is_miss)
+            else:
+                self.assertTrue(c.is_empty)
+
+    def test_shoot_response_hit(self):
+        f = TargetField(5, 5)
+        f.shoot_response(1, 1, True)
+        f.shoot_response(2, 2, True)
+        for c in f.cells:
+            if (c.x, c.y) in ((1, 1), (2, 2)):
+                self.assertTrue(c.is_hit)
+            else:
+                self.assertTrue(c.is_empty)

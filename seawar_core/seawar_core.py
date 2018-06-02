@@ -68,6 +68,12 @@ class CellField:
         return self.is_ship
 
 
+@base_cell(['empty', 'hit', 'border', 'miss'])
+class CellTarget:
+    pass
+
+
+
 def filter_correct_coord(func):
     def decor(*args, **kwargs):
         def pop_field(args):
@@ -86,7 +92,8 @@ def check_coord(func):
 
     def decor(field, x, y, *args, **kwargs):
         if not field.is_correct_coord(x, y):
-            raise CoordOutOfRange()
+            raise CoordOutOfRange(
+                f'Coordinate ({x}, {y}) is out of Field ranges: (0 => {field.max_x}, 0 => {field.max_y})')
         return func(field, x, y, *args, **kwargs)
 
     return decor
@@ -252,12 +259,18 @@ class ShipService:
         return not any(not cell.is_shooted for cell in field.cells if cell.is_ship)
 
 
-class TargetField:
-    def select_cell(self):
-        pass
+class TargetField(Field):
 
-    def shoot_response(self, result):
-        pass
+    def __init__(self, max_x=DEFAULT_MAX_X, max_y=DEFAULT_MAX_Y):
+        self.max_x = max_x
+        self.max_y = max_y
+        self._field = [[CellTarget(x, y) for x in range(max_x)] for y in range(max_y)]
 
-    def killed(self, ship):
-        pass
+    def select_cell(self) -> '(x, y)':
+        return choice([(c.x, c.y) for c in self.cells if c.is_empty])
+
+    def shoot_response(self, x, y, result):
+        if result:
+            self.get(x, y).mark_hit()
+        else:
+            self.get(x, y).mark_miss()

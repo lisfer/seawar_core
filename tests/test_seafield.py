@@ -1,7 +1,7 @@
 import unittest
 from itertools import chain, starmap
 
-from seawar_skeleton.seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField, \
+from seawar_core.seaplayground import SeaPlayground, Cell, IncorrectShipPosition, NoSpaceLeft, SeaField, \
     IncorrectCoordinate, ComputerPlayer, Matrix, SIGNALS
 
 
