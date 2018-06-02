@@ -269,8 +269,13 @@ class TargetField(Field):
     def select_cell(self) -> '(x, y)':
         return choice([(c.x, c.y) for c in self.cells if c.is_empty])
 
-    def shoot_response(self, x, y, result):
+    def shoot_response(self, x, y, result: bool):
         if result:
             self.get(x, y).mark_hit()
         else:
             self.get(x, y).mark_miss()
+
+    def mark_killed(self, border: 'list((x, y), ...)'):
+        for x, y in border:
+            cell = self.get(x, y)
+            cell.is_empty and cell.mark_border()

@@ -411,3 +411,16 @@ class TargetFieldTest(unittest.TestCase):
                 self.assertTrue(c.is_hit)
             else:
                 self.assertTrue(c.is_empty)
+
+    def test_mark_killed(self):
+        f = TargetField(5, 5)
+        f.get(3, 3).mark_miss()
+        border_cells = ((2, 3), (4, 3), (2, 4))
+        f.mark_killed(border=border_cells)
+        for c in f.cells:
+            if (c.x, c.y) in border_cells:
+                self.assertTrue(c.is_border)
+            elif (c.x, c.y) == (3, 3):
+                self.assertTrue(c.is_miss)
+            else:
+                self.assertTrue(c.is_empty)
