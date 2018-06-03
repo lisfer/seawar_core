@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 from os.path import join, dirname
 
 setup(
-    name='seawar_skeleton',
+    name='seawar_core',
     version='1.3.0',
     packages=find_packages(),
     long_description=open(join(dirname(__file__), 'README.md')).read(),
