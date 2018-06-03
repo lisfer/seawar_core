@@ -121,6 +121,25 @@ class MatrixTest(unittest.TestCase):
             Matrix.vektor_by_coords([(5, 4), (2, 4), (1, 4), (3, 4), (4, 4)]),
             (1, 4, 5, False))
 
+    def test_ribs_for_coords(self):
+        self.assertFalse(
+            {(2, 1), (3, 2), (2, 3), (1, 2)}.difference(Matrix.ribs_for_coord(2, 2)))
+
+    def test_ribs_for_coords_real(self):
+        f = Field(4, 4)
+        self.assertFalse({(0, 1), (1, 0)}.difference(Matrix.ribs_for_coord(f, 0, 0)))
+        self.assertFalse({(3, 2), (2, 3)}.difference(Matrix.ribs_for_coord(f, 3, 3)))
+
+    def test_corners_for_coords(self):
+        self.assertFalse(
+            {(1, 1), (3, 3), (3, 1), (1, 3)}.difference(Matrix.conrers_for_coord(2, 2)))
+
+    def test_corners_for_coords_real(self):
+        f = Field(4, 4)
+        self.assertFalse({(1, 1)}.difference(Matrix.conrers_for_coord(f, 0, 0)))
+        self.assertFalse({(3, 3)}.difference(Matrix.conrers_for_coord(f, 2, 2)))
+
+
 
 class FieldTest(unittest.TestCase):
 
@@ -374,8 +393,12 @@ class TargetCellTest(unittest.TestCase):
         self.assertTrue(c.is_border)
         c.mark_miss()
         self.assertTrue(c.is_miss)
+        c.mark_probable()
+        self.assertTrue(c.is_probable)
+        self.assertTrue(c.is_empty)
         c.mark_empty()
         self.assertTrue(c.is_empty)
+        self.assertFalse(c.is_probable)
 
 
 class TargetFieldTest(unittest.TestCase):
@@ -391,6 +414,12 @@ class TargetFieldTest(unittest.TestCase):
         f.get(1, 0).mark_hit()
         for i in range(10):
             self.assertEqual(f.select_cell(), (1, 1))
+
+    def test_select_probable_first(self):
+        f = TargetField()
+        f.get(4, 4).mark_probable()
+        for i in range(10):
+            self.assertEqual(f.select_cell(), (4, 4))
 
     def test_shoot_response_miss(self):
         f = TargetField(5, 5)
@@ -409,6 +438,10 @@ class TargetFieldTest(unittest.TestCase):
         for c in f.cells:
             if (c.x, c.y) in ((1, 1), (2, 2)):
                 self.assertTrue(c.is_hit)
+            elif (c.x, c.y) in ((0, 1), (1, 0), (1, 2), (2, 1), (2, 3), (3, 2)):
+                self. assertTrue(c.is_probable)
+            elif (c.x, c.y) in ((0, 0), (2, 0), (0, 2), (1, 3), (3, 1), (3, 3)):
+                self.assertTrue(c.is_border)
             else:
                 self.assertTrue(c.is_empty)
 
@@ -422,5 +455,32 @@ class TargetFieldTest(unittest.TestCase):
                 self.assertTrue(c.is_border)
             elif (c.x, c.y) == (3, 3):
                 self.assertTrue(c.is_miss)
+            else:
+                self.assertTrue(c.is_empty)
+
+
+class TargetFieldTestProbability(unittest.TestCase):
+
+    def test_probability(self):
+        t = TargetField(5, 5)
+        t.get(3, 2).mark_border()
+        t.mark_probably_cells(3, 3)
+        for c in t.cells:
+            if (c.x, c.y) in ((3, 4), (4, 3), (2, 3)):
+                self.assertTrue(c.is_probable)
+            elif (c.x, c.y) == (3, 2):
+                self.assertTrue(c.is_border)
+            else:
+                self.assertTrue(c.is_empty)
+
+    def test_improbable(self):
+        t = TargetField(5, 5)
+        t.get(2, 2).mark_hit()
+        t.mark_improbable_cells(3, 3)
+        for c in t.cells:
+            if (c.x, c.y) in ((4, 4), (2, 4), (4, 2)):
+                self.assertTrue(c.is_border)
+            elif (c.x, c.y) == (2, 2):
+                self.assertTrue(c.is_hit)
             else:
                 self.assertTrue(c.is_empty)

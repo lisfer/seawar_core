@@ -42,7 +42,7 @@ def base_cell(values=None, default=None):
                 return f'[{self.x}: {self.y} => {self.value}]'
 
             def __setattr__(self, attr, value):
-                if attr == 'value' and value and self.VALUES and value not in self.VALUES:
+                if attr == 'value' and value and self.VALUES and (value not in self.VALUES and value != self.default_value()):
                     raise UnknownCellValue()
                 return super(Cell, self).__setattr__(attr, value)
 
@@ -68,10 +68,14 @@ class CellField:
         return self.is_ship
 
 
-@base_cell(['empty', 'hit', 'border', 'miss'])
+@base_cell(['hit', 'border', 'miss', 'probable'], 'empty')
 class CellTarget:
-    pass
+    @property
+    def is_empty(self):
+        return self.value in ('empty', 'probable')
 
+    def mark_empty(self):
+        self.mark_value('empty')
 
 
 def filter_correct_coord(func):
@@ -125,12 +129,15 @@ class Matrix:
             cls.coords_by_vektor(coord_x + h_length, coord_y + v_length, v_length + 2, True, False)], [])))
 
     @staticmethod
+    @filter_correct_coord
     def ribs_for_coord(coord_x, coord_y):
-        pass
+        return map(lambda c, d: (c[0] + d[0], c[1] + d[1]), [(coord_x, coord_y)] * 4,
+                   ((-1, 0), (1, 0), (0, -1), (0, 1)))
 
     @staticmethod
+    @filter_correct_coord
     def conrers_for_coord(coord_x, coord_y):
-        pass
+        return map(lambda c, d: (c[0] + d[0], c[1] + d[1]), [(coord_x, coord_y)] * 4, product((-1, 1), (-1, 1)))
 
     @staticmethod
     def vektor_by_coords(cells):
@@ -153,11 +160,13 @@ class Field:
     def __repr__(self):
         return '<Field (max_x={}; max_y={})>'.format(self.max_x, self.max_y)
 
+    def cell_template(self, cell):
+        return f"[{' ' if c.is_empty else '.' if c.is_border else 'X'}]"
+
     def __str__(self):
         out = repr(self)
-        cell_template = lambda c: f"[{' ' if c.is_empty else '.' if c.is_border else 'X'}]"
         for row in self._field:
-            out += '\n\t' + ''.join([cell_template(c) for c in row])
+            out += '\n\t' + ''.join([self.cell_template(c) for c in row])
         return out + '\n'
 
     def get(self, x, y):
@@ -266,14 +275,27 @@ class TargetField(Field):
         self.max_y = max_y
         self._field = [[CellTarget(x, y) for x in range(max_x)] for y in range(max_y)]
 
+    def cell_template(self, cell):
+        return f"[{' ' if cell.is_empty else cell.value[0].upper()}]"
+
     def select_cell(self) -> '(x, y)':
-        return choice([(c.x, c.y) for c in self.cells if c.is_empty])
+        cells = [(c.x, c.y) for c in self.cells if c.is_probable]         # trying to find probable cells
+        cells = cells or [(c.x, c.y) for c in self.cells if c.is_empty]   # if none exists - select empty cells
+        return choice(cells)
 
     def shoot_response(self, x, y, result: bool):
         if result:
             self.get(x, y).mark_hit()
+            self.mark_probably_cells(x, y)
+            self.mark_improbable_cells(x, y)
         else:
             self.get(x, y).mark_miss()
+
+    def mark_probably_cells(self, x, y):
+        [self.get(*c).mark_probable() for c in Matrix.ribs_for_coord(self, x, y) if self.get(*c).is_empty]
+
+    def mark_improbable_cells(self, x, y):
+        [self.get(*c).mark_border() for c in Matrix.conrers_for_coord(self, x, y) if self.get(*c).is_empty]
 
     def mark_killed(self, border: 'list((x, y), ...)'):
         for x, y in border:
