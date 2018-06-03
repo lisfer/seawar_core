@@ -23,36 +23,36 @@ def base_cell(values=None, default=None):
         _values = values or []
 
         class Cell(*_classes):
+
+            default_value = None
+
             def is_value(self, value):
                 return self.value == value
 
             def mark_value(self, value):
                 self.value = value
 
-            def default_value(self):
-                return None
-
             def __init__(self, x, y, value=None):
                 super(Cell, self).__init__()
                 self.x = x
                 self.y = y
-                self.value = value or self.default_value()
+                self.value = value or self.default_value
 
             def __str__(self):
                 return f'[{self.x}: {self.y} => {self.value}]'
 
             def __setattr__(self, attr, value):
-                if attr == 'value' and value and self.VALUES and (value not in self.VALUES and value != self.default_value()):
+                if attr == 'value' and value and self.VALUES and (
+                        value not in self.VALUES and value != self.default_value):
                     raise UnknownCellValue()
                 return super(Cell, self).__setattr__(attr, value)
-
 
         setattr(Cell, 'VALUES', values)
 
         for v in _values:
             setattr(Cell, f'is_{v}', property(lambda s, v=v: s.is_value(value=v)))
             setattr(Cell, f'mark_{v}', (lambda s, v=v: s.mark_value(value=v)))
-            setattr(Cell, 'default_value', (lambda s: default or values[0] or None))
+            setattr(Cell, 'default_value',  default or values[0] or None)
         return Cell
     return decor
 
@@ -141,6 +141,7 @@ class Matrix:
 
     @staticmethod
     def vektor_by_coords(cells):
+        # noinspection PyTupleAssignmentBalance
         x1, y1, x2, y2 = *min(cells), *max(cells)
         return x1, y1, len(cells), y2 > y1
 
@@ -161,7 +162,7 @@ class Field:
         return '<Field (max_x={}; max_y={})>'.format(self.max_x, self.max_y)
 
     def cell_template(self, cell):
-        return f"[{' ' if c.is_empty else '.' if c.is_border else 'X'}]"
+        return f"[{' ' if cell.is_empty else '.' if cell.is_border else 'X'}]"
 
     def __str__(self):
         out = repr(self)
@@ -270,6 +271,7 @@ class ShipService:
 
 class TargetField(Field):
 
+    # noinspection PyMissingConstructor
     def __init__(self, max_x=DEFAULT_MAX_X, max_y=DEFAULT_MAX_Y):
         self.max_x = max_x
         self.max_y = max_y
