@@ -207,7 +207,7 @@ class ShipService:
 
     @staticmethod
     @check_coord
-    def get_ship_if_killed(field, coord_x, coord_y):
+    def get_ship_if_killed(field, coord_x, coord_y) -> 'dict(ship, border) or {}':
         """
         Checks if the ship on (x; y) position is killed
         :param field: <Field> object
