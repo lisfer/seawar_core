@@ -4,13 +4,13 @@ Core part of the game "SeaWar".
 It provides the main logic of the game: Field and Cell classes,
 Services for setting ship and services for shooting them
 
-##Intallation
+## Intallation
 
 It can be installed through pip:
 
 `git+git://github.com/lisfer/seawar_core.git#egg=seawar_core`
 
-##What is inside?
+## What is inside?
 
 Some conceptions:
 - **Vektor** - it's a name for way how lines of cells are specified. Actually, it's
@@ -37,7 +37,7 @@ is used for keeping information about computer shoots.
 - **CellTarget** - cell of *TargetField*. Differs from *CellField* with different set
 of values.
 
-##How to use it ?
+## How to use it ?
 
 You just need to call several methods:
 
